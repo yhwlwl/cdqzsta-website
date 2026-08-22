@@ -18,6 +18,81 @@
   var C = window.SITE_CONTENT || {};
   var voices = (C.voices && C.voices.quotes) || [];
 
+  function cfgOk() {
+    var cfg = window.SITE_CONFIG || {};
+    return cfg.supabaseUrl && cfg.anonKey && String(cfg.supabaseUrl).indexOf('YOUR-PROJECT-REF') === -1;
+  }
+
+  async function resolveContent() {
+    if (!cfgOk()) return C;
+    try {
+      var ctrl = ('AbortController' in window) ? new AbortController() : null;
+      var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 3000) : null;
+      var r = await fetch(String(window.SITE_CONFIG.supabaseUrl).replace(/\/$/, '') + '/rest/v1/sta_web_site_content?select=data&id=eq.main', {
+        headers: { apikey: window.SITE_CONFIG.anonKey, Accept: 'application/json' },
+        signal: ctrl ? ctrl.signal : undefined
+      });
+      if (timer) clearTimeout(timer);
+      if (r.ok) {
+        var j = await r.json();
+        if (j && j[0] && j[0].data && Object.keys(j[0].data).length) return j[0].data;
+      }
+    } catch (e) { /* offline or not configured, fallback */ }
+    return C;
+  }
+
+  function initTracking() {
+    if (!cfgOk()) return;
+    var endpoint = String(window.SITE_CONFIG.supabaseUrl).replace(/\/$/, '') + '/functions/v1/log-visit';
+    var vid;
+    try {
+      vid = localStorage.getItem('sta_vid');
+      if (!vid) {
+        vid = (window.crypto && crypto.randomUUID)
+          ? crypto.randomUUID()
+          : 'v-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+        localStorage.setItem('sta_vid', vid);
+      }
+    } catch (e) {
+      vid = 'anon-' + Math.random().toString(36).slice(2, 10);
+    }
+    function send(kind, section) {
+      var payload = {
+        kind: kind,
+        visitor_id: vid,
+        path: location.pathname,
+        section: section || null,
+        referrer: document.referrer || null,
+        screen: window.innerWidth + 'x' + window.innerHeight,
+        lang: navigator.language || null
+      };
+      try {
+        var blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+        if (!(navigator.sendBeacon && navigator.sendBeacon(endpoint, blob))) {
+          fetch(endpoint, { method: 'POST', body: blob, keepalive: true }).catch(function () {});
+        }
+      } catch (e) {}
+    }
+    send('pageview');
+    if (!('IntersectionObserver' in window) || RM) return;
+    var seen = {};
+    try { seen = JSON.parse(sessionStorage.getItem('sta_seen') || '{}'); } catch (e) {}
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        var id = en.target.id;
+        if (!id || id === 'home' || seen[id]) return;
+        seen[id] = 1;
+        try { sessionStorage.setItem('sta_seen', JSON.stringify(seen)); } catch (e) {}
+        send('section', id);
+      });
+    }, { threshold: 0.4 });
+    ['about', 'history', 'org', 'depts', 'events', 'voices', 'join'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) io.observe(el);
+    });
+  }
+
   var ICONS = {
     down: '<svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16m0 0l-6-6m6 6l6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     right: '<svg viewBox="0 0 24 24" fill="none"><path d="M4 12h16m0 0l-6-6m6 6l-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -941,7 +1016,9 @@
     }
   }
 
-  function boot() {
+  async function boot() {
+    C = await resolveContent();
+    voices = (C.voices && C.voices.quotes) || [];
     applyContent();
     splitAll();
     setInitial();
@@ -962,6 +1039,7 @@
     initMagnetic();
     initVoices();
     initMisc();
+    initTracking();
     initPreloader();
     window.addEventListener('load', function () {
       if (hasST) window.ScrollTrigger.refresh();

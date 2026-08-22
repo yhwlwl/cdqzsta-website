@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>STA 管理后台</title>
+<link rel="icon" href="../image_dev/logo-sta.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<div id="login-view" class="login-view">
+  <form id="login-form" class="login-card">
+    <img class="login-logo" src="../image_dev/logo-sta.jpg" alt="STA" onerror="this.style.display='none'">
+    <h1>管理后台</h1>
+    <p class="login-sub">成都七中科学技术协会</p>
+    <label class="field">用户名
+      <input id="login-user" type="text" required autocomplete="username" placeholder="admin">
+    </label>
+    <label class="field">密码
+      <input id="login-password" type="password" required autocomplete="current-password" placeholder="••••••••">
+    </label>
+    <p id="login-error" class="form-error" hidden></p>
+    <button id="login-btn" class="btn-primary" type="submit">登 录</button>
+  </form>
+</div>
+
+<div id="app-view" class="app-view" hidden>
+  <aside class="sidebar">
+    <div class="side-brand">
+      <img src="../image_dev/logo-sta.jpg" alt="" onerror="this.remove()">
+      <span>STA 后台</span>
+    </div>
+    <nav class="side-nav">
+      <button class="tab-btn" data-tab="content" data-perm="content">内容管理</button>
+      <button class="tab-btn" data-tab="logs" data-perm="logs">访问日志</button>
+      <button class="tab-btn" data-tab="admins" data-super>管理员</button>
+    </nav>
+    <div class="side-foot">
+      <span id="whoami" class="whoami"></span>
+      <button id="logout-btn" class="btn-ghost-sm" type="button">退出登录</button>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <section id="tab-content" class="tab">
+      <div class="toolbar">
+        <h2>内容管理</h2>
+        <div class="toolbar-actions">
+          <span id="save-status" class="save-status"></span>
+          <button id="history-btn" class="btn-ghost-sm" type="button">历史版本</button>
+          <button id="reload-btn" class="btn-ghost-sm" type="button">放弃修改</button>
+          <button id="save-btn" class="btn-primary" type="button">保存并发布</button>
+        </div>
+      </div>
+      <div id="history-panel" class="history-panel" hidden></div>
+      <div id="editor" class="editor"></div>
+    </section>
+
+    <section id="tab-logs" class="tab" hidden>
+      <div class="toolbar">
+        <h2>访问日志</h2>
+        <div class="toolbar-actions">
+          <select id="log-range" class="ctl">
+            <option value="7">近 7 天</option>
+            <option value="30" selected>近 30 天</option>
+            <option value="90">近 90 天</option>
+          </select>
+          <select id="log-kind" class="ctl">
+            <option value="all">全部类型</option>
+            <option value="pageview">页面浏览</option>
+            <option value="section">区块浏览</option>
+          </select>
+          <input id="log-q" class="ctl" type="search" placeholder="按路径筛选">
+          <button id="log-refresh" class="btn-ghost-sm" type="button">刷新</button>
+          <button id="log-export" class="btn-ghost-sm" type="button">导出 CSV</button>
+        </div>
+      </div>
+      <div id="log-cards" class="stat-cards"></div>
+      <div class="chart-card"><canvas id="log-chart" height="110"></canvas></div>
+      <div class="table-card">
+        <div id="log-table"></div>
+        <div class="pager">
+          <button id="log-prev" class="btn-ghost-sm" type="button">上一页</button>
+          <span id="log-pageinfo"></span>
+          <button id="log-next" class="btn-ghost-sm" type="button">下一页</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-admins" class="tab" hidden>
+      <div class="toolbar"><h2>管理员</h2></div>
+      <div class="admin-grid">
+        <div class="card">
+          <h3>添加管理员</h3>
+          <form id="admin-create-form" class="stack">
+            <label class="field">用户名<input id="na-user" type="text" required minlength="2"></label>
+            <label class="field">初始密码<input id="na-password" type="text" required minlength="6" placeholder="至少 6 位"></label>
+            <label class="field">姓名（可选）<input id="na-name" type="text"></label>
+            <label class="field">角色
+              <select id="na-role" class="ctl">
+                <option value="admin">普通管理员</option>
+                <option value="super">超级管理员</option>
+              </select>
+            </label>
+            <div class="field">权限
+              <label class="chk"><input type="checkbox" id="na-perm-content" checked> 内容管理</label>
+              <label class="chk"><input type="checkbox" id="na-perm-logs"> 访问日志</label>
+            </div>
+            <button class="btn-primary" type="submit">创建</button>
+          </form>
+        </div>
+        <div class="card">
+          <h3>管理员列表</h3>
+          <div id="admin-list"></div>
+        </div>
+        <div class="card">
+          <h3>修改我的密码</h3>
+          <form id="pwd-form" class="stack">
+            <label class="field">原密码<input id="pwd-old" type="password" required></label>
+            <label class="field">新密码<input id="pwd-new" type="password" required minlength="6"></label>
+            <button class="btn-primary" type="submit">确认修改</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+<script src="../js/config.js"></script>
+<script src="admin.js" defer></script>
+</body>
+</html>

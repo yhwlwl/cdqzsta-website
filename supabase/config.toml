@@ -1,0 +1,4 @@
+project_id = "sta-website"
+
+[functions.log-visit]
+verify_jwt = false
