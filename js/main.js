@@ -40,6 +40,8 @@
       im.alt = 'STA';
       mark.appendChild(im);
     }
+    var jl = $('.join-logo');
+    if (jl) jl.src = src;
     var fav = $('link[rel="icon"]');
     if (fav) fav.setAttribute('href', src);
   }

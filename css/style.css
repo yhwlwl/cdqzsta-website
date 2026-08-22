@@ -84,7 +84,10 @@ html.has-cursor a,html.has-cursor button{cursor:none}
 .nav--hidden{transform:translateY(-104%)}
 .nav__inner{height:76px;display:flex;align-items:center;justify-content:space-between;gap:24px}
 .logo{display:flex;align-items:center;gap:12px;flex:none}
-.logo__mark{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--blue),var(--blue-bright));color:#fff;font-family:var(--font-d);font-weight:700;font-size:13px;letter-spacing:.03em;display:grid;place-items:center}
+.logo__mark{flex:none;width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--blue),var(--blue-bright));color:#fff;font-family:var(--font-d);font-weight:700;font-size:13px;letter-spacing:.03em;display:grid;place-items:center}
+.logo__mark--img{width:auto;height:auto;background:none;border-radius:0}
+.logo__mark--img img{display:block;height:42px;width:auto;max-width:130px;object-fit:contain;mix-blend-mode:multiply}
+html.menu-open .logo__mark--img{visibility:hidden}
 .logo__text strong{display:block;font-size:15px;font-weight:700;line-height:1.25;transition:color .3s}
 .logo__text small{display:block;font-family:var(--font-d);font-size:9px;letter-spacing:.18em;color:var(--ink-40);transition:color .3s}
 .nav__links{display:flex;gap:clamp(22px,3vw,40px)}
@@ -343,6 +346,11 @@ html.menu-open .logo__text small{color:rgba(255,255,255,.45)}
 .join-rings i{position:absolute;border:1px dashed rgba(255,255,255,.14);border-radius:50%;pointer-events:none}
 .ring1{width:520px;height:520px;top:-140px;right:-80px;animation:spin 60s linear infinite}
 .ring2{width:340px;height:340px;bottom:-120px;left:-60px;animation:spin 45s linear infinite reverse}
+.join-logo{
+  position:absolute;top:clamp(28px,4.5vw,64px);right:clamp(24px,5vw,72px);
+  width:clamp(88px,9vw,130px);opacity:.6;pointer-events:none;
+  filter:invert(1);mix-blend-mode:screen;
+}
 .join .container{position:relative;z-index:1}
 .join-head{margin-bottom:clamp(56px,7vw,96px)}
 .join-title{margin-top:20px;font-size:clamp(40px,6vw,76px);font-weight:800;line-height:1.15;letter-spacing:.01em}
