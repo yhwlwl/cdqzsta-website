@@ -224,7 +224,7 @@
       if (/^(img|logo|art)$/i.test(key || '') && /^image_dev\//.test(String(val))) {
         var th = document.createElement('img');
         th.className = 'thumb';
-        th.src = '../' + val;
+        th.src = '/' + val;
         w.appendChild(th);
       }
       return;
