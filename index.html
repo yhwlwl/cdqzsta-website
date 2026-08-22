@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STA · 成都七中科学技术协会</title>
+<meta name="description" content="成都七中科学技术协会（STA）官方网站 —— 四川省首个高中生科技类学生组织。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231D59F2'/%3E%3Cpath d='M10 21L22 11M22 11h-8m8 0v8' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<noscript><style>.preloader,.cursor-dot,.cursor-ring{display:none!important}.noscript-tip{display:block!important}</style></noscript>
+</head>
+<body>
+
+<p class="noscript-tip" style="display:none;padding:100px 24px;text-align:center;font-size:15px">本站由 JavaScript 渲染内容，请启用浏览器 JavaScript 后访问。</p>
+
+<div class="noise" aria-hidden="true"></div>
+<div class="scroll-progress" aria-hidden="true"><i></i></div>
+<div class="cursor-dot" aria-hidden="true"></div>
+<div class="cursor-ring" aria-hidden="true"></div>
+
+<div class="preloader" aria-hidden="true">
+  <div class="preloader__brand">STA<span>成都七中科学技术协会</span></div>
+  <div class="preloader__num">000</div>
+  <div class="preloader__bar"><i></i></div>
+</div>
+
+<header class="nav" id="nav">
+  <div class="nav__inner container">
+    <a href="#home" class="logo" aria-label="返回顶部">
+      <span class="logo__mark">STA</span>
+      <span class="logo__text"><strong data-brand-cn>成都七中科学技术协会</strong><small data-brand-en>SCIENCE &amp; TECHNOLOGY ASSOCIATION</small></span>
+    </a>
+    <nav class="nav__links" aria-label="主导航"></nav>
+    <div class="nav__right">
+      <a href="#join" class="btn btn--sm nav__cta" data-magnetic><span class="btn__label">加入我们</span></a>
+      <button class="nav__burger" aria-label="打开菜单" aria-expanded="false"><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<div class="menu-overlay" aria-hidden="true">
+  <nav class="menu-overlay__links" aria-label="移动端导航"></nav>
+  <div class="menu-overlay__foot">
+    <span data-foot-en>SCIENCE &amp; TECHNOLOGY ASSOCIATION</span>
+    <span>SINCE 1999 · CHENGDU NO.7 HIGH SCHOOL</span>
+  </div>
+</div>
+
+<main id="main">
+
+  <section class="hero" id="home">
+    <canvas class="hero-canvas" aria-hidden="true"></canvas>
+    <div class="hero-grid" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+    <div class="hero-badges" aria-hidden="true"></div>
+
+    <div class="hero-content container">
+      <p class="eyebrow" data-intro data-hero-eyebrow></p>
+      <h1 class="hero-title">
+        <span class="h-line"><span data-split-hero data-hero-line1></span></span>
+        <span class="h-line stroke"><span data-split-hero data-hero-line2></span></span>
+      </h1>
+      <p class="hero-sub" data-intro data-hero-sub></p>
+      <div class="hero-ctas" data-intro data-hero-ctas></div>
+    </div>
+
+    <a class="hero-ring" href="#about" aria-label="向下滚动">
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        <defs><path id="ringPath" d="M100,100 m-80,0 a80,80 0 1,1 160,0 a80,80 0 1,1 -160,0"/></defs>
+        <text><textPath href="#ringPath" data-ring-text></textPath></text>
+      </svg>
+      <span class="hero-ring__center"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16m0 0l-6-6m6 6l6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </a>
+
+    <div class="hero-foot container">
+      <div class="scroll-cue" aria-hidden="true"><span data-scroll-cue>SCROLL</span><i></i></div>
+      <p class="hero-note" data-hero-note></p>
+    </div>
+  </section>
+
+  <div class="marquee" data-marquee="1" aria-hidden="true"><div class="marquee__track"></div></div>
+
+  <section class="section about" id="about">
+    <span class="ghost-word" data-speed="0.15" aria-hidden="true" data-ghost="ABOUT"></span>
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow" data-reveal data-about-eyebrow></p>
+          <h2 class="section-title" data-split data-about-title></h2>
+        </div>
+        <p class="section-desc" data-reveal data-about-lead></p>
+      </div>
+      <div class="about-body" data-reveal>
+        <p class="about-text" data-about-html></p>
+        <div class="about-facts" data-about-facts></div>
+      </div>
+      <div class="stats" data-reveal-group data-about-stats></div>
+    </div>
+  </section>
+
+  <section class="section history" id="history">
+    <span class="ghost-word" data-speed="0.12" aria-hidden="true" data-ghost="HISTORY"></span>
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow" data-reveal data-history-eyebrow></p>
+          <h2 class="section-title" data-split data-history-title></h2>
+        </div>
+        <p class="section-desc" data-reveal data-history-desc></p>
+      </div>
+      <div class="timeline-wrap">
+        <span class="timeline-line" aria-hidden="true"><i></i></span>
+        <ol class="timeline" data-history-items></ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="section org" id="org">
+    <span class="ghost-word" data-speed="0.15" aria-hidden="true" data-ghost="TEAM"></span>
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow" data-reveal data-org-eyebrow></p>
+          <h2 class="section-title" data-split data-org-title></h2>
+        </div>
+        <p class="section-desc" data-reveal data-org-desc></p>
+      </div>
+      <div class="org-grid" data-org-groups></div>
+    </div>
+  </section>
+
+  <section class="section depts" id="depts">
+    <span class="ghost-word" data-speed="0.15" aria-hidden="true" data-ghost="TEAMS"></span>
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow" data-reveal data-depts-eyebrow></p>
+          <h2 class="section-title" data-split data-depts-title></h2>
+        </div>
+        <p class="section-desc" data-reveal data-depts-desc></p>
+      </div>
+      <div class="depts-list" data-depts-list></div>
+    </div>
+  </section>
+
+  <div class="dept-preview" aria-hidden="true">
+    <div class="dept-preview__art g1">
+      <span class="dept-preview__en">EDITORIAL</span>
+      <span class="dept-preview__motto"></span>
+    </div>
+  </div>
+
+  <section class="section events" id="events">
+    <span class="ghost-word" data-speed="0.12" aria-hidden="true" data-ghost="EVENTS"></span>
+    <div class="container section-head">
+      <div>
+        <p class="eyebrow" data-reveal data-events-eyebrow></p>
+        <h2 class="section-title" data-split data-events-title></h2>
+      </div>
+      <p class="section-desc" data-reveal data-events-desc></p>
+    </div>
+    <div class="events-pin">
+      <div class="h-wrap">
+        <div class="h-track" data-events-track></div>
+      </div>
+      <div class="events-progress" aria-hidden="true"><i></i></div>
+    </div>
+  </section>
+
+  <section class="section voices" id="voices">
+    <span class="ghost-word" data-speed="0.15" aria-hidden="true" data-ghost="VOICES"></span>
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow" data-reveal data-voices-eyebrow></p>
+          <h2 class="section-title" data-split data-voices-title></h2>
+        </div>
+        <p class="section-desc" data-reveal data-voices-desc></p>
+      </div>
+      <div class="voice-box" data-reveal>
+        <span class="voice-mark" aria-hidden="true">&ldquo;</span>
+        <div class="voice-stage" data-voice-stage aria-live="polite"></div>
+        <div class="voice-dots" role="tablist" aria-label="切换语录" data-voice-dots></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="marquee marquee--rev" data-marquee="2" aria-hidden="true"><div class="marquee__track"></div></div>
+
+  <section class="join" id="join">
+    <span class="join-orb join-orb--1" aria-hidden="true"></span>
+    <span class="join-orb join-orb--2" aria-hidden="true"></span>
+    <div class="join-rings" aria-hidden="true"><i class="ring1"></i><i class="ring2"></i></div>
+    <div class="container">
+      <div class="join-head">
+        <p class="eyebrow eyebrow--light" data-reveal data-join-eyebrow></p>
+        <p class="join-tagline" data-reveal data-join-tagline></p>
+        <h2 class="join-title" data-split data-join-title></h2>
+        <p class="join-desc" data-reveal data-join-desc></p>
+        <div class="join-facts" data-join-facts></div>
+      </div>
+      <div class="join-grid">
+        <div class="steps-wrap">
+          <span class="steps-line" aria-hidden="true"><i></i></span>
+          <ol class="steps" data-join-steps></ol>
+        </div>
+        <aside class="join-card" data-reveal>
+          <h3 class="join-card__title" data-join-card-title></h3>
+          <div class="qq-row">
+            <span class="qq-label" data-join-qqlabel></span>
+            <strong class="qq-num" data-join-qqnum></strong>
+          </div>
+          <div class="qr">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M14 14h3v3h-3zM19 19h2v2h-2zM14 20h2v1h-2z" fill="currentColor"/></svg>
+            <span data-join-qrnote></span>
+          </div>
+          <button class="btn copy-qq" type="button" data-copy="">
+            <span class="btn__label" data-join-copylabel></span>
+            <span class="btn__icon"><svg viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="11" height="11" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M5 15H4.5A1.5 1.5 0 013 13.5v-9A1.5 1.5 0 014.5 3h9A1.5 1.5 0 0115 4.5V5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+          </button>
+          <p class="join-note" data-join-note></p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-big" aria-hidden="true"><span data-footer-big></span></div>
+    <div class="footer-slogans" data-footer-slogans></div>
+    <div class="footer-grid" data-footer-cols></div>
+    <p class="footer-legal" data-footer-legal></p>
+    <div class="footer-bottom">
+      <p data-footer-copy></p>
+      <a href="#home">BACK TO TOP</a>
+    </div>
+    <p class="footer-version" data-footer-version></p>
+    <p class="footer-credit" data-footer-credit></p>
+  </div>
+</footer>
+
+<button class="backtop" aria-label="返回顶部">
+  <svg viewBox="0 0 24 24" fill="none"><path d="M12 20V4m0 0l-6 6m6-6l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
+
+<div class="toast" role="status" aria-live="polite"></div>
+
+<script src="js/content.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollTrigger.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js" defer></script>
+<script src="js/main.js" defer></script>
+</body>
+</html>
