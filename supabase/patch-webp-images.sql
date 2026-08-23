@@ -36,8 +36,8 @@ where id = 'main';
 
 -- 2. 校验：结果里不应再有任何旧扩展名引用（期望输出 0）
 select
-  (data::text like '%logo-sta.jpg%') +
-  (data::text like '%.png"') +
-  (data::text like '%gaokao.jpg%') +
-  (data::text like '%mag41.jfif%') as leftover_old_refs
+  (data::text like '%logo-sta.jpg%')::int +
+  (data::text like '%.png"')::int +
+  (data::text like '%gaokao.jpg%')::int +
+  (data::text like '%mag41.jfif%')::int as leftover_old_refs
 from public.sta_web_site_content where id = 'main';
