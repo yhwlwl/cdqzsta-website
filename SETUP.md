@@ -36,6 +36,8 @@
 
 > 说明：不需要在 Authentication 里做任何配置，本项目不使用 Supabase Auth。
 
+> **存量项目升级**：若线上库是早期版本建的（后台登录报 `admin_me 404`、访问日志报 `read-only transaction`），只需在 SQL Editor 执行一次 `supabase/patch-admin-fix.sql`（幂等，可重复跑，不动数据）。新装项目直接跑 `schema.sql` 即可，已包含全部修复。
+
 ## 二、部署 IP 归属地边缘函数（一次性）
 
 需要在本机执行命令（任选一种安装 CLI：`npm i -g supabase` 或 `scoop install supabase`）：
@@ -45,7 +47,12 @@ supabase login                                  # 浏览器授权
 supabase link --project-ref <项目ref>            # ref 即 URL 中 xxx.supabase.co 的 xxx
 supabase secrets set SERVICE_ROLE_KEY=<粘贴 Secret key（sb_secret_... 或 service_role）>
 supabase functions deploy log-visit             # config.toml 已关闭其 JWT 校验（匿名埋点必需）
+supabase functions deploy upload-image          # 后台本机传图用；桶 sta-web-images 需先建（见下）
 ```
+
+> 建图床存储桶（后台本机传图需要，一次性）：SQL Editor 执行
+> `insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types) values ('sta-web-images','sta-web-images', true, 5242880, array['image/png','image/jpeg','image/webp','image/gif']) on conflict (id) do update set public = true;`
+> （若只使用「贴图床链接」方式换图，可跳过此步与 upload-image 部署。）
 
 ## 三、Vercel 部署
 
@@ -60,11 +67,36 @@ supabase functions deploy log-visit             # config.toml 已关闭其 JWT �
 
 | 模块 | 权限 | 功能 |
 |---|---|---|
-| 内容管理 | content | 全站内容可视化编辑（文本/数组/卡片增删排序、图片预览）；「保存并发布」即时生效；「历史版本」可回滚最近 20 次 |
+| 内容管理 | content | 两种编辑方式（见下）；「保存并发布」即时生效；「历史版本」可回滚最近 20 次 |
 | 访问日志 | logs | PV/UV 概览、趋势图、明细表（时间/页面/来源/设备/归属地/IP）、路径筛选、CSV 导出 |
 | 管理员 | 仅超管 | 创建/删除管理员、分配角色（超管/普通）与权限（内容/日志）、重置密码；不可删除自己或最后一个超管 |
 
 普通管理员的权限由超级管理员逐人勾选（`content`＝改内容、`logs`＝看日志）。
+
+### 内容编辑的两种方式
+
+1. **✦ 可视化编辑（推荐，改字首选）**
+   - 内容管理工具栏点「✦ 可视化编辑」→ 整站以真实样式渲染在预览层中
+   - **点哪改哪**：文字直接点上去改（同一段文字在页面上出现多处会自动同步）；图片点一下弹「更换图片」框
+   - 顶栏实时显示已修改处数；「保存并发布」只提交改动过的字段，其余数据原样保留
+   - 「放弃修改」还原为已发布版本；Esc 或「退出」回到表单后台；编辑态下链接不可点击、不产生访问日志
+2. **表单编辑器（结构操作）**
+   - 按区块折叠卡片展示全部字段，适合**增删条目、调整顺序、批量查看**等结构性修改（如新增一条历程、给部门加标签）
+   - 「表单保存发布」与可视化的「保存并发布」走同一条发布链路，均写入历史版本
+
+### 更换图片（图床优先）
+
+两处编辑器换图都走同一个「更换图片」弹窗，**推荐用图床**（加载走专业 CDN，不占网站流量）：
+
+1. **贴图床直链（推荐）**：先把图片上传到任意图床（如 阿里云 OSS、腾讯云 COS、Cloudflare R2、ImgURL、路过图床等），复制得到的**直链**（`https://…/xxx.webp`），粘贴进弹窗输入框 → 下方立即预览 → 加载成功点「使用」
+   - 预览失败会提示「防盗链」等可能原因；仍可强行使用（但前台可能显示不出）
+   - 选图床时注意选**允许外链**的；国内访问优先选国内 OSS/COS 或 Cloudflare
+2. **上传本机图片（备用）**：弹窗里点「选择本机图片上传」（PNG / JPG / WebP / GIF，≤5MB）。经 `upload-image` 边缘函数校验后台会话后写入 Supabase Storage（桶 `sta-web-images`，公开读），返回外链自动填入
+3. **仓库路径**：静态素材（logo 等不常变的）直接填 `image_dev/xxx.webp`，随代码一起发版
+
+入口：可视化编辑点页面上的图片；表单编辑器点图片字段旁的「⬆ 上传」。
+
+> 大厂官网的内容后台基本就是这个思路：运营在「所见即所得」视图里改文案，涉及结构增删时再进结构化表单；发布走版本化存储、可灰度可回滚。本项目用 Supabase 版本表实现了其中最实用的部分：即时发布 + 最近 20 次一键回滚。
 
 ## 五、验证清单
 

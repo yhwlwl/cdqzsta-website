@@ -82,11 +82,28 @@ alter table if exists public.sta_web_visit_logs enable row level security;
 -- 敏感表对客户端完全封闭（仅安全定义者函数可访问）
 revoke all on public.sta_web_admins from anon, authenticated;
 revoke all on public.sta_web_admin_sessions from anon, authenticated;
-revoke all on public.sta_web_site_content_revisions from anon, authenticated;
+
+-- 可查询表显式授权：具体能看哪些行仍由上方 RLS 策略限制
+-- （visit_logs 需 logs 权限、revisions 需 content 权限，site_content 公开读）
+grant select on public.sta_web_visit_logs to anon, authenticated;
+grant select on public.sta_web_site_content_revisions to anon, authenticated;
+grant select on public.sta_web_site_content to anon, authenticated;
+
+-- 图片上传桶：公开读；写入仅经 upload-image 边缘函数（校验后台会话）用 service role 完成，
+-- 因此这里不需要任何 storage.objects 写策略
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'sta-web-images', 'sta-web-images', true, 5242880,
+  array['image/png','image/jpeg','image/webp','image/gif']
+)
+on conflict (id) do update
+  set public = true,
+      file_size_limit = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
 
 -- ---------- 3. 会话 / 权限辅助函数 ----------
 create or replace function public.current_admin() returns uuid
-language plpgsql volatile as $$
+language plpgsql stable as $$
 declare
   raw text;
   tok text;
@@ -94,13 +111,17 @@ declare
 begin
   raw := current_setting('request.headers', true);
   if raw is null or raw = '' then return null; end if;
-  tok := (raw::json)->>'x-admin-token';
-  if tok is null then return null; end if;
+  begin
+    tok := (raw::json)->>'x-admin-token';
+  exception when others then
+    return null;
+  end;
+  if tok is null or tok = '' then return null; end if;
   select admin_id into v_id from public.sta_web_admin_sessions
     where token = tok and expires_at > now();
-  if v_id is not null then
-    update public.sta_web_admin_sessions set last_seen = now() where token = tok;
-  end if;
+  -- 注意：不要在这里 update last_seen —— PostgREST 对 GET 请求使用
+  -- 只读事务，读路径里的 UPDATE 会报
+  -- "cannot execute UPDATE in a read-only transaction"
   return v_id;
 end $$;
 
@@ -189,6 +210,23 @@ begin
     delete from public.sta_web_admin_sessions
      where token = ((raw::json)->>'x-admin-token');
   end if;
+end $$;
+
+-- 恢复登录态：后台刷新页面时凭 x-admin-token 换取当前管理员信息
+create or replace function public.admin_me()
+returns jsonb
+language plpgsql stable security definer set search_path = public, extensions as $$
+declare
+  v record;
+begin
+  select id, username, name, role, permissions
+    into v from public.sta_web_admins
+   where id = public.current_admin();
+  if v.id is null then return null; end if;
+  return jsonb_build_object(
+    'id', v.id, 'username', v.username, 'name', v.name,
+    'role', v.role, 'permissions', to_jsonb(v.permissions)
+  );
 end $$;
 
 create or replace function public.change_my_password("old" text, "new" text)

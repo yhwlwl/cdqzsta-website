@@ -83,11 +83,12 @@ html.has-cursor a,html.has-cursor button{cursor:none}
 .nav--scrolled{background:rgba(255,255,255,.78);-webkit-backdrop-filter:blur(16px) saturate(1.5);backdrop-filter:blur(16px) saturate(1.5);border-color:var(--line)}
 .nav--hidden{transform:translateY(-104%)}
 .nav__inner{height:76px;display:flex;align-items:center;justify-content:space-between;gap:24px}
-.logo{display:flex;align-items:center;gap:12px;flex:none}
+.logo{display:flex;align-items:center;gap:12px;flex:0 1 auto;min-width:0}
 .logo__mark{flex:none;width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--blue),var(--blue-bright));color:#fff;font-family:var(--font-d);font-weight:700;font-size:13px;letter-spacing:.03em;display:grid;place-items:center}
 .logo__mark--img{width:auto;height:auto;background:none;border-radius:0}
 .logo__mark--img img{display:block;height:42px;width:auto;max-width:130px;object-fit:contain;mix-blend-mode:multiply}
 html.menu-open .logo__mark--img{visibility:hidden}
+.logo__text{min-width:0}
 .logo__text strong{display:block;font-size:15px;font-weight:700;line-height:1.25;transition:color .3s}
 .logo__text small{display:block;font-family:var(--font-d);font-size:9px;letter-spacing:.18em;color:var(--ink-40);transition:color .3s}
 .nav__links{display:flex;gap:clamp(22px,3vw,40px)}
@@ -455,7 +456,6 @@ html.menu-open .logo__text small{color:rgba(255,255,255,.45)}
 
 @media (max-width:768px){
   .hero{padding-top:96px;padding-bottom:110px}
-  .hero-badges{display:none}
   .hero-title{font-size:clamp(48px,13.5vw,80px)}
   .h-line.stroke .wi{-webkit-text-stroke-width:1.6px}
   .hero-note{display:none}
@@ -465,6 +465,46 @@ html.menu-open .logo__text small{color:rgba(255,255,255,.45)}
   .footer-grid{grid-template-columns:1fr;gap:32px}
   .footer-bottom{justify-content:center;text-align:center}
   .join{margin:0 8px}
+
+  /* 移动端装饰：缩小并放进标题右侧空白区，完整可见 */
+  .hero-ring{display:block;right:10px;top:36%;width:112px;height:112px}
+  .hero-ring__center{width:42px;height:42px}
+  .hero-ring__center svg{width:15px;height:15px}
+  .hero-badges{display:none}
+
+  /* 移动端全屏菜单：压缩字号与留白，保证 8 项在一屏内 */
+  .menu-overlay__links{padding:84px 24px 128px;gap:0}
+  .menu-overlay__links a{gap:14px;padding:.8vh 0}
+  .menu-num{font-size:11.5px}
+  .menu-txt{font-size:clamp(28px,5.4vh,44px)}
+  .menu-overlay__foot{flex-direction:column;align-items:flex-start;gap:7px;bottom:26px;font-size:9.5px;letter-spacing:.18em;line-height:1.7}
+}
+
+/* 矮屏（横屏/折叠屏内屏）：菜单改为可滚动，避免溢出 */
+@media (max-height:560px){
+  .menu-overlay__links{justify-content:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .menu-txt{font-size:clamp(22px,7vh,32px)}
+  .menu-overlay__links a{padding:.6vh 0}
+}
+
+/* 小屏手机：导航精简，汉堡按钮永远可见 */
+@media (max-width:560px){
+  .nav__inner{height:64px;gap:10px}
+  .logo{gap:9px}
+  .logo__mark{width:34px;height:34px;border-radius:10px;font-size:12px}
+  .logo__mark--img img{width:22px;height:22px}
+  .logo__text strong{font-size:13px}
+  .logo__text small{font-size:8px;letter-spacing:.12em;line-height:1.55;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+  .nav__right{gap:8px}
+  .nav__burger{width:42px;height:42px}
+  .menu-overlay{clip-path:circle(0% at calc(100% - 41px) 32px)}
+  .menu-overlay.open{clip-path:circle(150% at calc(100% - 41px) 32px)}
+}
+
+/* 窄屏：装饰再收一档，防止与标题贴边 */
+@media (max-width:350px){
+  .hero-ring{width:96px;height:96px;right:6px;top:38%}
+  .b1{right:6px}
 }
 
 @media (max-width:520px){

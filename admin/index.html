@@ -53,9 +53,10 @@
         <h2>内容管理</h2>
         <div class="toolbar-actions">
           <span id="save-status" class="save-status"></span>
+          <button id="visual-btn" class="btn-primary" type="button">✦ 可视化编辑</button>
           <button id="history-btn" class="btn-ghost-sm" type="button">历史版本</button>
           <button id="reload-btn" class="btn-ghost-sm" type="button">放弃修改</button>
-          <button id="save-btn" class="btn-primary" type="button">保存并发布</button>
+          <button id="save-btn" class="btn-ghost-sm" type="button">表单保存发布</button>
         </div>
       </div>
       <div id="history-panel" class="history-panel" hidden></div>
@@ -131,6 +132,20 @@
     </section>
 
   </main>
+</div>
+
+<div id="visual-view" class="visual-view" hidden>
+  <div class="visual-bar">
+    <strong>✦ 可视化编辑</strong>
+    <span id="vis-dirty">正在载入页面…</span>
+    <div class="visual-actions">
+      <span class="vis-tip">点文字直接改字 · 点图片可换图（贴图床链接或本机上传）· 链接已禁点 · Esc 退出</span>
+      <button id="vis-reset" class="btn-ghost-sm" type="button">放弃修改</button>
+      <button id="vis-exit" class="btn-ghost-sm" type="button">退 出</button>
+      <button id="vis-save" class="btn-primary" data-label="保存并发布" type="button">保存并发布</button>
+    </div>
+  </div>
+  <iframe id="visual-frame" title="网站实时预览"></iframe>
 </div>
 
 <div id="toast" class="toast" hidden></div>

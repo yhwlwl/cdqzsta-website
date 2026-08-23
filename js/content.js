@@ -15,7 +15,7 @@ window.SITE_CONTENT = {
     founder: "周涛（电子科技大学教授）",
     est: "1999",
     coreValues: "自由 · 公平 · 勇气",
-    logo: "image_dev/logo-sta.jpg"
+    logo: "image_dev/logo-sta.webp"
   },
 
   nav: {
@@ -60,7 +60,7 @@ window.SITE_CONTENT = {
     title: "关于科协",
     lead: "成都七中四大学生组织之一，四川省首个高中生科技类学生组织。",
     descHTML: "成都七中科学技术协会（STA）成立于1999年，是成都七中四大学生组织之一，也是四川省首个高中生科技类学生组织。<br>主要工作包括编辑校级杂志《未来梦》、承办科技活动月、未来梦大讲坛等校级活动，并开展校际科技交流。<br>现设编辑部、新媒体部、活动部、宣传部、巨疯实验部、网络部六大部门，形成以「自由、公平、勇气」为核心的发展体系。",
-    art: "image_dev/161AFC8A791CC7451D9B43D2FF67D306.png",
+    art: "image_dev/161AFC8A791CC7451D9B43D2FF67D306.webp",
     facts: [
       { k: "组织类型", v: "校级科技类高中生学生组织" },
       { k: "创立时间", v: "1999 年" },
@@ -180,28 +180,28 @@ window.SITE_CONTENT = {
     items: [
       {
         date: "2026.07.14", art: "",
-        img: "image_dev/F149099CABE84B5E6111F7D1E95FE4E3.png",
+        img: "image_dev/F149099CABE84B5E6111F7D1E95FE4E3.webp",
         title: "「同赴星海」夏令营招新盛况",
         desc: "林荫曦园，我们于此同赴星海；高山海洋，我们于此共枕长风。皆是我们奔赴自由与热爱的最好证明——一到夏天，我要去科协！",
         tags: ["招新", "夏令营"]
       },
       {
         date: "2026.06", art: "",
-        img: "image_dev/gaokao.jpg",
+        img: "image_dev/gaokao.webp",
         title: "向光翱翔，一览长天",
         desc: "你拥有身后星光点点，也拥有眼前气象万千。STA 祝 2026 年高考考生：向光翱翔，一览长天，高考加油！",
         tags: ["高考", "祝福"]
       },
       {
         date: "2026.05.07", art: "",
-        img: "image_dev/03E1BFB71564E18844783D43415814CC.png",
+        img: "image_dev/03E1BFB71564E18844783D43415814CC.webp",
         title: "《未来梦》第 42 期正式发布",
         desc: "未来梦试读交流会上，第 42 期《未来梦》正式发布，科幻增刊《启明》同步推出。此刻，便请抬头仰望星空，一同探寻宇宙的终极答案。",
         tags: ["《未来梦》", "《启明》"]
       },
       {
         date: "校运会", art: "",
-        img: "image_dev/mag41.jfif",
+        img: "image_dev/mag41.webp",
         title: "运动会 & 第 41 期发布",
         desc: "《未来梦》第 41 期在运动会上正式与大家见面，开启一场心智溯源之旅；素描本、便利贴、书签等文创同步推出。",
         tags: ["杂志", "文创"]
@@ -243,7 +243,7 @@ window.SITE_CONTENT = {
     qqNumber: "910 674 276",
     copyText: "910674276",
     copyLabel: "复制群号",
-    qrImg: "image_dev/A06247CDED94482DE9996A624AF23742.png",
+    qrImg: "image_dev/A06247CDED94482DE9996A624AF23742.webp",
     qrNote: "二维码占位 · 请替换",
     note: "入群请备注「招新 + 姓名 + 班级」"
   },

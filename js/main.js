@@ -42,6 +42,7 @@
   }
 
   function initTracking() {
+    if (new URLSearchParams(location.search).has('visual')) return; /* 后台可视化编辑模式不记日志 */
     if (!cfgOk()) return;
     var endpoint = String(window.SITE_CONFIG.supabaseUrl).replace(/\/$/, '') + '/functions/v1/log-visit';
     var vid;
