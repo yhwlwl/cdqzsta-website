@@ -1,13 +1,18 @@
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SERVICE_ROLE_KEY = Deno.env.get('SERVICE_ROLE_KEY') ?? '';
 
-const CORS: Record<string, string> = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
-
 const BOTS = /bot|spider|crawl|slurp|bingpreview|facebookexternalhit|headless/i;
+
+function corsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('origin') || '*';
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    Vary: 'Origin',
+  };
+}
 
 function parseUA(ua: string): { device: string; os: string; browser: string } {
   const device = BOTS.test(ua)
@@ -47,10 +52,10 @@ const s = (v: unknown, n: number): string | null =>
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: CORS });
+    return new Response(null, { status: 204, headers: corsHeaders(req) });
   }
   if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405, headers: CORS });
+    return new Response('Method Not Allowed', { status: 405, headers: corsHeaders(req) });
   }
   try {
     const b = await req.json();
@@ -111,12 +116,12 @@ Deno.serve(async (req: Request) => {
 
     return new Response(JSON.stringify({ ok: ins.ok }), {
       status: 202,
-      headers: { ...CORS, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     });
   } catch (_) {
     return new Response(JSON.stringify({ ok: false }), {
       status: 200,
-      headers: { ...CORS, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(req), 'Content-Type': 'application/json' },
     });
   }
 });

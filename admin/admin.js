@@ -38,6 +38,23 @@
   };
   function kl(key) { return LABELS[key] || key; }
 
+  var SECTION_META = {
+    meta:    { label: '基础信息', hint: '浏览器标签页上的标题和描述文字' },
+    brand:   { label: '品牌信息', hint: '左上角 Logo 旁边的协会名称（中/英文）', anchor: 'home' },
+    nav:     { label: '导航菜单', hint: '顶部导航的链接文字与「加入我们」按钮' },
+    hero:    { label: '首屏大标题区', hint: '页面最顶上一屏：大字标题、副标题、两个按钮、悬浮徽章、环形文字', anchor: 'home' },
+    marquee1:{ label: '跑马灯一', hint: '首屏正下方那条横向滚动的关键词' },
+    about:   { label: '关于板块', hint: '「关于科协」：左侧简介与信息卡、右侧插画、四个统计数字', anchor: 'about' },
+    history: { label: '发展历程', hint: '竖向年份时间线（1999 → 2026）', anchor: 'history' },
+    org:     { label: '组织架构', hint: '主席层 / 运营委员会 / 财务委员会 三张卡片', anchor: 'org' },
+    depts:   { label: '六大部门', hint: '部门列表行，悬停浮现部门宣言卡片', anchor: 'depts' },
+    events:  { label: '近期活动', hint: '横向滑动的活动照片卡片画廊', anchor: 'events' },
+    voices:  { label: '科协的声音', hint: '自动轮播的语录区块', anchor: 'voices' },
+    join:    { label: '招新板块', hint: '底部深蓝色区域：标语、报名步骤、QQ 群卡片', anchor: 'join' },
+    marquee2:{ label: '跑马灯二', hint: '招新深蓝区上方那条反向滚动的文字' },
+    footer:  { label: '页脚', hint: '页面最底部：巨型 STA 字样、口号、栏目链接、法律声明、署名' }
+  };
+
   function toast(msg, isErr) {
     var t = $('#toast');
     t.textContent = msg;
@@ -187,15 +204,36 @@
     var root = $('#editor');
     root.innerHTML = '';
     Object.keys(DATA).forEach(function (topKey) {
+      var meta = SECTION_META[topKey] || {};
       var det = document.createElement('details');
       det.className = 'sec';
       det.open = ['meta', 'brand'].indexOf(topKey) !== -1;
       var sum = document.createElement('summary');
-      sum.textContent = kl(topKey);
+      sum.textContent = meta.label || kl(topKey);
+      if (meta.hint) {
+        var h = document.createElement('small');
+        h.className = 'sum-hint';
+        h.textContent = '　' + meta.hint;
+        sum.appendChild(h);
+      }
       det.appendChild(sum);
       var body = document.createElement('div');
       body.className = 'sec-body';
-      det.appendChild(body);
+      if (meta.hint) {
+        var hintLine = document.createElement('p');
+        hintLine.className = 'sec-hint';
+        hintLine.textContent = '📍 对应前台位置：' + meta.hint;
+        if (meta.anchor) {
+          var link = document.createElement('a');
+          link.href = location.origin + '/#' + meta.anchor;
+          link.target = '_blank';
+          link.rel = 'noopener';
+          link.textContent = '打开前台对应位置 ↗';
+          hintLine.appendChild(document.createTextNode('　'));
+          hintLine.appendChild(link);
+        }
+        body.appendChild(hintLine);
+      }
       buildControl(body, DATA[topKey], [topKey], topKey);
       root.appendChild(det);
     });
@@ -304,12 +342,18 @@
     var cards = document.createElement('div');
     cards.className = 'cards';
     val.forEach(function (item, i) {
+      var cardTitle = item.title || item.name || item.text || item.year ||
+        (item.names && item.names[0]) || (item.t && ('栏目：' + item.t)) || ('#' + (i + 1));
       var card = document.createElement('div');
       card.className = 'item-card';
       var head = document.createElement('div');
       head.className = 'item-head';
       head.appendChild(Object.assign(document.createElement('span'),
         { className: 'item-tag', textContent: '#' + (i + 1) }));
+      var nameSpan = document.createElement('span');
+      nameSpan.className = 'item-name';
+      nameSpan.textContent = String(cardTitle).slice(0, 26);
+      head.appendChild(nameSpan);
       var ops = document.createElement('div');
       ops.className = 'item-ops';
       ops.appendChild(miniBtn('↑', '', function () { move(val, i, -1); renderEditor(); }));
@@ -542,7 +586,7 @@
       var rows = await rpc('admin_list');
       var el = $('#admin-list');
       if (!rows || !rows.length) { el.innerHTML = '<p class="dim">暂无数据</p>'; return; }
-      var html = '<table class="admin-tbl"><thead><tr>' +
+      var html = '<div class="tbl-wrap"><table class="admin-tbl"><thead><tr>' +
         '<th>用户名</th><th>姓名</th><th>角色</th><th>权限</th><th>创建时间</th><th>操作</th></tr></thead><tbody>';
       rows.forEach(function (a) {
         var isSelf = a.id === ME.id;
@@ -568,7 +612,7 @@
             '</div></td>' +
           '</tr>';
       });
-      html += '</tbody></table>';
+      html += '</tbody></table></div>';
       el.innerHTML = html;
     } catch (e) {
       $('#admin-list').innerHTML = '<p class="dim">' + (e.message || '载入失败') + '</p>';
