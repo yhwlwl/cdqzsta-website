@@ -227,10 +227,14 @@
     $('#app-view').hidden = false;
     $('#whoami').textContent = ME.username + '\n' + (ME.role === 'super' ? '超级管理员' : '管理员');
     $$('.tab-btn').forEach(function (b) {
-      if (b.dataset.perm && !hasPerm(b.dataset.perm)) b.hidden = true;
-      else b.hidden = false;
-      if (b.dataset.super && ME.role !== 'super') b.hidden = true;
+      /* 注意：data-super 是无值属性，dataset.super 返回 ""（falsy），
+         必须用 hasAttribute 判断，否则普通管理员也能看到管理员面板 */
+      var okSuper = !b.hasAttribute('data-super') || ME.role === 'super';
+      var okPerm = !b.dataset.perm || hasPerm(b.dataset.perm);
+      b.hidden = !(okSuper && okPerm);
     });
+    /* 兜底：管理员面板里的超管字段（添加表单含「超级管理员」角色、管理员列表）对普通管理员一律隐藏 */
+    $$('#tab-admins [data-super-card]').forEach(function (c) { c.hidden = ME.role !== 'super'; });
     var first = $$('.tab-btn').filter(function (b) { return !b.hidden; })[0];
     if (first) switchTab(first.dataset.tab);
   }
@@ -287,7 +291,11 @@
       loadContent().catch(function (e) { toast(e.message || '载入内容失败', true); });
     }
     if (name === 'logs') loadLogs().catch(function (e) { toast(e.message || '载入日志失败', true); });
-    if (name === 'admins') loadAdmins();
+    if (name === 'admins') {
+      /* 兜底：非超管不允许看到管理员管理（后端 admin_* RPC 也有 assert_super 校验） */
+      if (!ME || ME.role !== 'super') return;
+      loadAdmins();
+    }
   }
   $$('.tab-btn').forEach(function (b) {
     b.addEventListener('click', function () { switchTab(b.dataset.tab); });
