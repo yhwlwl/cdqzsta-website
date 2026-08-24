@@ -151,6 +151,7 @@ input,select,textarea{font-family:inherit;font-size:14px}
 .mono{font-family:var(--font-d)}
 .dim{color:var(--ink-40)}
 .pager{display:flex;justify-content:center;align-items:center;gap:16px;padding-top:14px;font-size:13px;color:var(--ink-60)}
+.au-note{margin:-6px 0 14px;font-size:12.5px;line-height:1.7}
 
 .admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;align-items:start}
 .admin-grid>.card{min-width:0;overflow:hidden}

@@ -38,6 +38,7 @@
     <nav class="side-nav">
       <button class="tab-btn" data-tab="content" data-perm="content">内容管理</button>
       <button class="tab-btn" data-tab="logs" data-perm="logs">访问日志</button>
+      <button class="tab-btn" data-tab="audit" data-perm="logs">审计日志</button>
       <button class="tab-btn" data-tab="admins" data-super>管理员</button>
     </nav>
     <div class="side-foot">
@@ -90,6 +91,41 @@
           <button id="log-prev" class="btn-ghost-sm" type="button">上一页</button>
           <span id="log-pageinfo"></span>
           <button id="log-next" class="btn-ghost-sm" type="button">下一页</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-audit" class="tab" hidden>
+      <div class="toolbar">
+        <h2>审计日志</h2>
+        <div class="toolbar-actions">
+          <select id="au-range" class="ctl">
+            <option value="7">近 7 天</option>
+            <option value="30" selected>近 30 天</option>
+            <option value="90">近 90 天</option>
+            <option value="365">近 1 年</option>
+          </select>
+          <select id="au-kind" class="ctl">
+            <option value="all">全部动作</option>
+            <option value="login_success">登录成功</option>
+            <option value="login_failed">登录失败</option>
+            <option value="logout">退出登录</option>
+            <option value="section_view">浏览板块</option>
+            <option value="visual_open">进入可视化编辑</option>
+            <option value="visual_close">退出可视化编辑</option>
+            <option value="content_publish">发布内容</option>
+          </select>
+          <button id="au-refresh" class="btn-ghost-sm" type="button">刷新</button>
+          <button id="au-export" class="btn-ghost-sm" type="button">导出 CSV</button>
+        </div>
+      </div>
+      <p class="dim au-note">记录后台登录成败（含失败时尝试的用户名与 IP）、退出、板块浏览、内容发布。安全类事件永久保留，「浏览板块」仅保留 90 天。</p>
+      <div class="table-card">
+        <div id="au-table"></div>
+        <div class="pager">
+          <button id="au-prev" class="btn-ghost-sm" type="button">上一页</button>
+          <span id="au-pageinfo"></span>
+          <button id="au-next" class="btn-ghost-sm" type="button">下一页</button>
         </div>
       </div>
     </section>

@@ -266,6 +266,11 @@
         p_user: $('#login-user').value.trim(),
         password: $('#login-password').value
       });
+      /* 服务端失败时不再抛 HTTP 异常（异常事务会回滚审计记录），
+         而是正常返回 {ok:false, error}，这里负责判错 */
+      if (!res || res.ok === false || !res.token) {
+        throw new Error((res && res.error) || '登录失败');
+      }
       TOKEN = res.token;
       ME = res.admin;
       ME.permissions = typeof ME.permissions === 'string' ? JSON.parse(ME.permissions) : ME.permissions;
@@ -283,14 +288,35 @@
     clearToken();
   });
 
+  /* ---------- 审计埋点（登录成败/退出在服务端落库；这里上报后台行为） ---------- */
+  var AUDIT_ACTIONS = {
+    login_success:   '登录成功',
+    login_failed:    '登录失败',
+    logout:          '退出登录',
+    section_view:    '浏览板块',
+    content_publish: '发布内容',
+    visual_open:     '进入可视化编辑',
+    visual_close:    '退出可视化编辑'
+  };
+  var TAB_NAMES = { content: '内容管理', logs: '访问日志', audit: '审计日志', admins: '管理员' };
+
+  /* 上报一条审计事件（fire-and-forget：失败静默，不打扰操作） */
+  function audit(action, detail) {
+    try {
+      rpc('admin_audit', { p_action: action, p_detail: detail || {} }).catch(function () {});
+    } catch (e) {}
+  }
+
   /* ---------- 标签切换 ---------- */
   function switchTab(name) {
+    audit('section_view', { section: name });
     $$('.tab-btn').forEach(function (b) { b.classList.toggle('active', b.dataset.tab === name); });
     $$('.tab').forEach(function (s) { s.hidden = s.id !== 'tab-' + name; });
     if (name === 'content' && !DATA) {
       loadContent().catch(function (e) { toast(e.message || '载入内容失败', true); });
     }
     if (name === 'logs') loadLogs().catch(function (e) { toast(e.message || '载入日志失败', true); });
+    if (name === 'audit') loadAudit().catch(function (e) { toast(e.message || '载入审计日志失败', true); });
     if (name === 'admins') {
       /* 兜底：非超管不允许看到管理员管理（后端 admin_* RPC 也有 assert_super 校验） */
       if (!ME || ME.role !== 'super') return;
@@ -743,6 +769,81 @@
     a.click();
   });
 
+  /* ---------- 审计日志 ---------- */
+  var AROWS = [], APAGE = 1;
+
+  function escHtml(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function auditDetail(r) {
+    var d = r.detail || {};
+    if (r.action === 'section_view') return TAB_NAMES[d.section] || d.section || '—';
+    if (r.action === 'content_publish') return '发布新版本 v' + (d.version != null ? d.version : '?');
+    if (r.action === 'login_failed') return d.reason || '凭据错误';
+    if (r.action === 'login_success') return '会话有效期 7 天';
+    return '—';
+  }
+
+  async function loadAudit() {
+    var days = parseInt($('#au-range').value, 10) || 30;
+    var from = new Date(Date.now() - days * 864e5).toISOString();
+    var p = '/rest/v1/sta_web_admin_audit_logs?select=*&created_at=gte.' + from + '&order=created_at.desc&limit=20000';
+    var act = $('#au-kind').value;
+    if (act !== 'all') p += '&action=eq.' + act;
+    AROWS = (await api(p)) || [];
+    APAGE = 1;
+    renderAudit();
+  }
+
+  function renderAudit() {
+    var pages = Math.max(1, Math.ceil(AROWS.length / PAGESIZE));
+    if (APAGE > pages) APAGE = pages;
+    var slice = AROWS.slice((APAGE - 1) * PAGESIZE, APAGE * PAGESIZE);
+    var html = '<table class="tbl"><thead><tr>' +
+      '<th>时间</th><th>动作</th><th>账号</th><th>详情</th><th>IP</th><th>User-Agent</th></tr></thead><tbody>';
+    if (!slice.length) html += '<tr><td colspan="6" class="dim">该时间范围内没有记录</td></tr>';
+    slice.forEach(function (r) {
+      var ua = r.ua || '';
+      html += '<tr>' +
+        '<td class="mono">' + fmtLocal(r.created_at) + '</td>' +
+        '<td>' + escHtml(AUDIT_ACTIONS[r.action] || r.action) + '</td>' +
+        '<td class="mono">' + escHtml(r.username) + '</td>' +
+        '<td>' + escHtml(auditDetail(r)) + '</td>' +
+        '<td class="mono">' + escHtml(r.ip || '—') + '</td>' +
+        '<td class="dim" title="' + escHtml(ua) + '">' + escHtml(ua.slice(0, 60)) + (ua.length > 60 ? '…' : '') + '</td>' +
+        '</tr>';
+    });
+    html += '</tbody></table>';
+    $('#au-table').innerHTML = html;
+    $('#au-pageinfo').textContent = '第 ' + APAGE + ' / ' + pages + ' 页 · 共 ' + AROWS.length + ' 条';
+  }
+
+  $('#au-refresh').addEventListener('click', function () { loadAudit().catch(function (e) { toast(e.message, true); }); });
+  ['#au-range', '#au-kind'].forEach(function (s) {
+    $(s).addEventListener('change', function () { loadAudit().catch(function (e) { toast(e.message, true); }); });
+  });
+  $('#au-prev').addEventListener('click', function () { if (APAGE > 1) { APAGE--; renderAudit(); } });
+  $('#au-next').addEventListener('click', function () {
+    if (APAGE < Math.ceil(AROWS.length / PAGESIZE)) { APAGE++; renderAudit(); }
+  });
+  $('#au-export').addEventListener('click', function () {
+    var head = ['时间', '动作', '账号', '详情', 'IP', 'User-Agent'];
+    var lines = [head.join(',')];
+    AROWS.forEach(function (r) {
+      lines.push([fmtLocal(r.created_at), AUDIT_ACTIONS[r.action] || r.action, r.username || '',
+        auditDetail(r), r.ip || '', r.ua || '']
+        .map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(','));
+    });
+    var blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'admin-audit-' + new Date().toISOString().slice(0, 10) + '.csv';
+    a.click();
+  });
+
   /* ---------- 管理员管理 ---------- */
   async function loadAdmins() {
     try {
@@ -878,13 +979,16 @@
     $('#visual-view').hidden = false;
     VIS.on = true;
     VIS.dirty = {};
+    audit('visual_open');
     updateVisBar('正在载入页面…');
     loadVisFrame();
   }
   function closeVisual() {
+    var was = VIS.on;
     VIS.on = false;
     document.documentElement.classList.remove('vis-mode');
     $('#visual-view').hidden = true;
+    if (was) audit('visual_close');
   }
   function loadVisFrame() {
     VIS.loading = true;

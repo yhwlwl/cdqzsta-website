@@ -72,20 +72,34 @@ create table if not exists public.sta_web_visit_logs (
   city       text
 );
 
+-- 管理后台审计日志：登录成功/失败、退出、板块浏览、内容发布等后台操作留痕
+create table if not exists public.sta_web_admin_audit_logs (
+  id         bigint generated always as identity primary key,
+  created_at timestamptz not null default now(),
+  admin_id   uuid references public.sta_web_admins(id) on delete set null,
+  username   text not null default '?',
+  action     text not null,
+  detail     jsonb,
+  ip         text,
+  ua         text
+);
+
 -- ---------- 2. 行级安全 ----------
 alter table if exists public.sta_web_admins enable row level security;
 alter table if exists public.sta_web_admin_sessions enable row level security;
 alter table if exists public.sta_web_site_content enable row level security;
 alter table if exists public.sta_web_site_content_revisions enable row level security;
 alter table if exists public.sta_web_visit_logs enable row level security;
+alter table if exists public.sta_web_admin_audit_logs enable row level security;
 
 -- 敏感表对客户端完全封闭（仅安全定义者函数可访问）
 revoke all on public.sta_web_admins from anon, authenticated;
 revoke all on public.sta_web_admin_sessions from anon, authenticated;
 
 -- 可查询表显式授权：具体能看哪些行仍由上方 RLS 策略限制
--- （visit_logs 需 logs 权限、revisions 需 content 权限，site_content 公开读）
+-- （visit_logs / audit_logs 需 logs 权限、revisions 需 content 权限，site_content 公开读）
 grant select on public.sta_web_visit_logs to anon, authenticated;
+grant select on public.sta_web_admin_audit_logs to anon, authenticated;
 grant select on public.sta_web_site_content_revisions to anon, authenticated;
 grant select on public.sta_web_site_content to anon, authenticated;
 
@@ -139,6 +153,58 @@ language sql stable security definer set search_path = public, extensions as $$
   );
 $$;
 
+-- ---------- 3.5 审计埋点 ----------
+-- 底层写入（仅限安全定义者函数内部调用：已对 anon/authenticated/Public 收回执行权限）
+create or replace function public.audit_write(
+  p_admin uuid, p_user text, p_action text, p_detail jsonb default null)
+returns void
+language plpgsql security definer set search_path = public, extensions as $$
+declare
+  raw text;
+  ip text;
+  ua text;
+begin
+  raw := current_setting('request.headers', true);
+  if raw is not null and raw <> '' then
+    begin
+      ip := split_part(coalesce((raw::json)->>'x-forwarded-for', (raw::json)->>'x-real-ip', ''), ',', 1);
+      ip := nullif(trim(ip), '');
+      ua := left(coalesce((raw::json)->>'user-agent', ''), 400);
+    exception when others then
+      ip := null; ua := null;
+    end;
+  end if;
+  insert into public.sta_web_admin_audit_logs(admin_id, username, action, detail, ip, ua)
+  values (
+    p_admin,
+    coalesce(nullif(left(btrim(coalesce(p_user, '')), 64), ''), '?'),
+    left(p_action, 40),
+    p_detail,
+    left(ip, 64),
+    nullif(ua, '')
+  );
+  -- 低频清理：只裁剪「浏览板块」这类高噪音记录（保留 90 天），
+  -- 登录成败 / 退出 / 发布等安全相关事件永久保留
+  if random() < 0.02 then
+    delete from public.sta_web_admin_audit_logs
+     where action = 'section_view' and created_at < now() - interval '90 days';
+  end if;
+end $$;
+
+revoke execute on function public.audit_write(uuid, text, text, jsonb) from public, anon, authenticated;
+
+-- 已登录管理员的埋点入口（后台前端 RPC 调用，如板块切换）；无有效会话时静默忽略
+create or replace function public.admin_audit(p_action text, p_detail jsonb default null)
+returns void
+language plpgsql security definer set search_path = public, extensions as $$
+declare
+  v record;
+begin
+  select id, username into v from public.sta_web_admins where id = public.current_admin();
+  if v.id is null then return; end if;
+  perform public.audit_write(v.id, v.username, p_action, p_detail);
+end $$;
+
 -- ---------- 4. 站点内容策略与触发器 ----------
 drop policy if exists sc_read on public.sta_web_site_content;
 create policy sc_read on public.sta_web_site_content for select using (true);
@@ -153,6 +219,9 @@ create policy scr_read on public.sta_web_site_content_revisions for select
 drop policy if exists vl_read on public.sta_web_visit_logs;
 create policy vl_read on public.sta_web_visit_logs for select using (public.has_perm('logs'));
 
+drop policy if exists al_read on public.sta_web_admin_audit_logs;
+create policy al_read on public.sta_web_admin_audit_logs for select using (public.has_perm('logs'));
+
 create or replace function public.on_content_update()
 returns trigger language plpgsql security definer set search_path = public, extensions as $$
 declare v_admin uuid;
@@ -164,6 +233,17 @@ begin
   insert into public.sta_web_site_content_revisions(data, saved_by) values (old.data, v_admin);
   delete from public.sta_web_site_content_revisions
    where id < (select max(id) - 49 from public.sta_web_site_content_revisions);
+  -- 审计埋点：内容发布（表单保存发布 / 可视化保存发布都走这里）
+  begin
+    perform public.audit_write(
+      v_admin,
+      (select username from public.sta_web_admins where id = v_admin),
+      'content_publish',
+      jsonb_build_object('version', new.version)
+    );
+  exception when others then
+    null;  -- 埋点失败不影响发布本身
+  end;
   return new;
 end $$;
 
@@ -173,6 +253,8 @@ create trigger trg_content_update before update on public.sta_web_site_content
 
 create index if not exists idx_sta_web_visit_created on public.sta_web_visit_logs (created_at desc);
 create index if not exists idx_sta_web_visit_visitor on public.sta_web_visit_logs (visitor_id);
+create index if not exists idx_sta_web_audit_created on public.sta_web_admin_audit_logs (created_at desc);
+create index if not exists idx_sta_web_audit_action on public.sta_web_admin_audit_logs (action, created_at desc);
 
 -- ---------- 5. 登录相关 RPC ----------
 create or replace function public.admin_login(p_user text, "password" text)
@@ -185,14 +267,34 @@ begin
     where lower(username) = lower(admin_login.p_user)
       and password_hash = crypt(admin_login."password", password_hash);
   if v.id is null then
+    -- 审计埋点：登录失败（记录尝试的用户名原文，截断到 64 字符；埋点失败不影响原有报错）
+    begin
+      perform public.audit_write(
+        null,
+        btrim(admin_login.p_user),
+        'login_failed',
+        jsonb_build_object('reason', '用户名或密码不正确')
+      );
+    exception when others then
+      null;
+    end;
     perform pg_sleep(0.5);
-    raise exception '用户名或密码不正确';
+    -- 注意：这里绝不能 raise exception —— 异常会把整个事务回滚，
+    -- 连刚写入的审计行也一并回滚。改为正常返回 ok:false，由前端判错。
+    return jsonb_build_object('ok', false, 'error', '用户名或密码不正确');
   end if;
   delete from public.sta_web_admin_sessions where admin_id = v.id and expires_at < now();
   tok := encode(gen_random_bytes(32), 'hex');
   insert into public.sta_web_admin_sessions(token, admin_id, expires_at)
     values (tok, v.id, now() + interval '7 days');
+  -- 审计埋点：登录成功（埋点失败不影响登录）
+  begin
+    perform public.audit_write(v.id, v.username, 'login_success', null);
+  exception when others then
+    null;
+  end;
   return jsonb_build_object(
+    'ok', true,
     'token', tok,
     'admin', jsonb_build_object(
       'id', v.id, 'username', v.username, 'name', v.name,
@@ -203,12 +305,26 @@ end $$;
 
 create or replace function public.admin_logout() returns void
 language plpgsql security definer set search_path = public, extensions as $$
-declare raw text;
+declare
+  raw text;
+  v record;
 begin
   raw := current_setting('request.headers', true);
   if raw is not null and raw <> '' then
+    select s.admin_id as id, a.username as username into v
+      from public.sta_web_admin_sessions s
+      join public.sta_web_admins a on a.id = s.admin_id
+     where s.token = ((raw::json)->>'x-admin-token');
     delete from public.sta_web_admin_sessions
      where token = ((raw::json)->>'x-admin-token');
+    -- 审计埋点：退出登录
+    if v.id is not null then
+      begin
+        perform public.audit_write(v.id, v.username, 'logout', null);
+      exception when others then
+        null;
+      end;
+    end if;
   end if;
 end $$;
 
