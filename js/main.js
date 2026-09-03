@@ -28,16 +28,25 @@
     try {
       var ctrl = ('AbortController' in window) ? new AbortController() : null;
       var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 3000) : null;
-      var r = await fetch(String(window.SITE_CONFIG.supabaseUrl).replace(/\/$/, '') + '/rest/v1/sta_web_site_content?select=data&id=eq.main', {
+      var r = await fetch(String(window.SITE_CONFIG.supabaseUrl).replace(/\/$/, '') + '/rest/v1/sta_web_site_content?select=data,version,updated_at&id=eq.main', {
         headers: { apikey: window.SITE_CONFIG.anonKey, Accept: 'application/json' },
+        cache: 'no-store',
         signal: ctrl ? ctrl.signal : undefined
       });
       if (timer) clearTimeout(timer);
       if (r.ok) {
         var j = await r.json();
-        if (j && j[0] && j[0].data && Object.keys(j[0].data).length) return j[0].data;
+        if (j && j[0] && j[0].data && Object.keys(j[0].data).length) {
+          window.SITE_CONTENT_META = {
+            source: 'cloud',
+            version: j[0].version || null,
+            updatedAt: j[0].updated_at || null
+          };
+          return j[0].data;
+        }
       }
     } catch (e) { /* offline or not configured, fallback */ }
+    window.SITE_CONTENT_META = { source: cfgOk() ? 'local-fallback' : 'local' };
     return C;
   }
 
@@ -989,15 +998,50 @@
     var pl = $('.preloader');
     document.body.classList.add('locked');
     var finished = false;
+    var dart = window.STA_DART_SPLASH;
+    var dartInstance = null;
+    var dartRaf = 0;
     function finish() {
       if (finished) return;
       finished = true;
+      if (dartRaf) cancelAnimationFrame(dartRaf);
+      if (dartInstance && dartInstance.destroy) dartInstance.destroy();
       if (pl) {
         pl.classList.add('done');
         setTimeout(function () { if (pl.parentNode) pl.parentNode.removeChild(pl); }, 1100);
       }
       document.body.classList.remove('locked');
       heroIntro();
+    }
+    if (dart && pl && !RM) {
+      dartInstance = dart.mount(pl, { content: C });
+      pl.classList.add('preloader--dart-active');
+      var dartStart = performance.now();
+      var dartLast = dartStart;
+      var dartTick = function (now) {
+        if (finished || !dartInstance) return;
+        var dartDt = Math.min((now - dartLast) / 1000, .06);
+        dartLast = now;
+        var t = Math.min((now - dartStart) / 1000, dart.duration + .95);
+        try {
+          dartInstance.frame(t, dartDt);
+        } catch (e) {
+          console.error('[STA] splash animation failed', e);
+          finish();
+          return;
+        }
+        if (t >= dart.duration + .95) {
+          finish();
+          return;
+        }
+        dartRaf = requestAnimationFrame(dartTick);
+      };
+      dartRaf = requestAnimationFrame(dartTick);
+      return;
+    }
+    if (dart && pl && RM) {
+      finish();
+      return;
     }
     var num = $('.preloader__num');
     var bar = $('.preloader__bar i');
