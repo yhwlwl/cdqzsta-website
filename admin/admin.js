@@ -1790,6 +1790,7 @@
       });
       box.querySelector('.dlg-cancel').addEventListener('click', function () { panel.remove(); });
       panel.addEventListener('click', function (e) { if (e.target === panel) panel.remove(); });
+      panel.appendChild(box);
       document.body.appendChild(panel);
     }).catch(function (e) { toast(e.message, true); });
   }
@@ -1828,6 +1829,7 @@
       });
       box.querySelector('.dlg-cancel').addEventListener('click', function () { panel.remove(); });
       panel.addEventListener('click', function (e) { if (e.target === panel) panel.remove(); });
+      panel.appendChild(box);
       document.body.appendChild(panel);
     }).catch(function (e) { toast(e.message, true); });
   }
