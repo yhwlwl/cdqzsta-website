@@ -1801,9 +1801,9 @@
     if (b.type === 'paragraph') return '<p class="nc-block nc-p">' + escHtml(b.text || '') + '</p>';
     if (b.type === 'heading') return '<h3 class="nc-block nc-h' + (b.level === 2 ? ' nc-h2' : '') + '">' + escHtml(b.text || '') + '</h3>';
     if (b.type === 'quote') return '<blockquote class="nc-block nc-quote">' + escHtml(b.text || '') + '</blockquote>';
-    if (b.type === 'image') return '<figure class="nc-figure"><img class="nc-prev-img" src="' + escHtml(b.src || '') + '" alt="' + escHtml(b.alt || '') + '">' + (b.caption ? '<figcaption>' + escHtml(b.caption) + '</figcaption>' : '') + '</figure>';
-    if (b.type === 'qr_image') return '<figure class="nc-figure nc-qr"><img class="nc-prev-img" src="' + escHtml(b.src || '') + '" alt="' + escHtml(b.alt || '') + '">' + (b.caption ? '<figcaption>' + escHtml(b.caption) + '</figcaption>' : '') + '</figure>';
-    if (b.type === 'gallery') return '<div class="nc-gal">' + (b.images || []).map(function (img) { return '<figure class="nc-figure"><img class="nc-prev-img" src="' + escHtml(img.src || '') + '" alt="' + escHtml(img.alt || '') + '">' + (img.caption ? '<figcaption>' + escHtml(img.caption) + '</figcaption>' : '') + '</figure>'; }).join('') + '</div>';
+    if (b.type === 'image') return '<figure class="nc-figure"><img class="nc-prev-img" src="' + escHtml(imgSrc(b.src || '')) + '" alt="' + escHtml(b.alt || '') + '">' + (b.caption ? '<figcaption>' + escHtml(b.caption) + '</figcaption>' : '') + '</figure>';
+    if (b.type === 'qr_image') return '<figure class="nc-figure nc-qr"><img class="nc-prev-img" src="' + escHtml(imgSrc(b.src || '')) + '" alt="' + escHtml(b.alt || '') + '">' + (b.caption ? '<figcaption>' + escHtml(b.caption) + '</figcaption>' : '') + '</figure>';
+    if (b.type === 'gallery') return '<div class="nc-gal">' + (b.images || []).map(function (img) { return '<figure class="nc-figure"><img class="nc-prev-img" src="' + escHtml(imgSrc(img.src || '')) + '" alt="' + escHtml(img.alt || '') + '">' + (img.caption ? '<figcaption>' + escHtml(img.caption) + '</figcaption>' : '') + '</figure>'; }).join('') + '</div>';
     if (b.type === 'link_button') return '<a class="nc-block nc-linkbtn" href="' + escHtml(b.url || '#') + '">' + escHtml(b.label || '') + '</a>';
     return '';
   }
@@ -1820,7 +1820,7 @@
       var article = box.querySelector('.nc-prev-article');
       var meta = '<div class="nc-prev-meta"><span class="np-cat">' + escHtml(n.category || '通知') + '</span>' + (n.department ? '<span>' + escHtml(n.department) + '</span>' : '') + (n.publish_at ? '<time>' + fmtLocal(n.publish_at) + '</time>' : '') + '</div>';
       var body = (n.content || []).map(blockHtml).join('');
-      var gallery = (n.images || []).map(function (img) { return '<figure class="nc-figure"><img class="nc-prev-img" src="' + escHtml(img.src || '') + '" alt="' + escHtml(img.alt || '') + '">' + (img.caption ? '<figcaption>' + escHtml(img.caption) + '</figcaption>' : '') + '</figure>'; }).join('');
+      var gallery = (n.images || []).map(function (img) { return '<figure class="nc-figure"><img class="nc-prev-img" src="' + escHtml(imgSrc(img.src || '')) + '" alt="' + escHtml(img.alt || '') + '">' + (img.caption ? '<figcaption>' + escHtml(img.caption) + '</figcaption>' : '') + '</figure>'; }).join('');
       var act = (n.action_label && n.action_url) ? '<a class="nc-block nc-linkbtn" href="' + escHtml(n.action_url) + '">' + escHtml(n.action_label) + '</a>' : '';
       article.innerHTML = '<h1 class="nc-prev-title">' + escHtml(n.title) + '</h1>' + meta + '<div class="nc-prev-body">' + body + gallery + act + '</div>';
       function setMode(m) { stage.classList.toggle('mobile', m === 'mobile'); }
