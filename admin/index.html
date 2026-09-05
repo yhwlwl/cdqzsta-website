@@ -37,6 +37,7 @@
     </div>
     <nav class="side-nav">
       <button class="tab-btn" data-tab="content" data-perm="content">内容管理</button>
+      <button class="tab-btn" data-tab="notices">公告</button>
       <button class="tab-btn" data-tab="logs" data-perm="logs">访问日志</button>
       <button class="tab-btn" data-tab="audit" data-perm="logs">审计日志</button>
       <button class="tab-btn" data-tab="admins" data-super>管理员</button>
@@ -62,6 +63,45 @@
       </div>
       <div id="history-panel" class="history-panel" hidden></div>
       <div id="editor" class="editor"></div>
+    </section>
+
+    <section id="tab-notices" class="tab" hidden>
+      <div id="nc-list">
+        <div class="toolbar">
+          <h2>公告管理</h2>
+          <div class="toolbar-actions">
+            <input id="nc-q" class="ctl" type="search" placeholder="搜索标题或摘要">
+            <select id="nc-cat" class="ctl"><option value="">全部分类</option></select>
+            <select id="nc-status" class="ctl">
+              <option value="">全部状态</option>
+              <option value="draft">草稿</option>
+              <option value="scheduled">定时</option>
+              <option value="published">已发布</option>
+              <option value="withdrawn">已撤回</option>
+              <option value="archived">已归档</option>
+            </select>
+            <select id="nc-sort" class="ctl">
+              <option value="publish_at">按发布时间</option>
+              <option value="deadline_at">按截止时间</option>
+              <option value="updated_at">按更新时间</option>
+              <option value="status">按状态</option>
+            </select>
+            <button id="nc-refresh" class="btn-ghost-sm" type="button">刷新</button>
+            <button id="nc-new" class="btn-primary" type="button">＋ 新建公告</button>
+            <button id="nc-bulk-archive" class="btn-ghost-sm" type="button">批量归档</button>
+            <button id="nc-bulk-withdraw" class="btn-ghost-sm" type="button">批量撤回</button>
+          </div>
+        </div>
+        <div class="table-card">
+          <div id="nc-table"></div>
+          <div class="pager">
+            <button id="nc-prev" class="btn-ghost-sm" type="button">上一页</button>
+            <span id="nc-pageinfo"></span>
+            <button id="nc-next" class="btn-ghost-sm" type="button">下一页</button>
+          </div>
+        </div>
+      </div>
+      <div id="nc-editor" hidden></div>
     </section>
 
     <section id="tab-logs" class="tab" hidden>

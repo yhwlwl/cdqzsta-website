@@ -9,5 +9,7 @@ supabase/.branches/
 .session-restore/
 _dev-shots/
 _dev-admin-test.html
+_dev-admin-test*.html
 .dsh-probe*
+.dsh/
 node_modules/
