@@ -114,8 +114,8 @@ html.has-cursor a,html.has-cursor button{cursor:none}
 .nav__inner{height:76px;display:flex;align-items:center;justify-content:space-between;gap:24px}
 .logo{display:flex;align-items:center;gap:12px;flex:0 1 auto;min-width:0}
 .logo__mark{flex:none;width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--blue),var(--blue-bright));color:#fff;font-family:var(--font-d);font-weight:700;font-size:13px;letter-spacing:.03em;display:grid;place-items:center}
-.logo__mark--img{width:auto;height:auto;background:none;border-radius:0}
-.logo__mark--img img{display:block;height:42px;width:auto;max-width:130px;object-fit:contain;mix-blend-mode:multiply}
+.logo__mark--img{width:40px;height:40px;background:var(--surface);border-radius:12px;overflow:hidden;display:grid;place-items:center}
+.logo__mark--img img{display:block;width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply}
 html.menu-open .logo__mark--img{visibility:hidden}
 .logo__text{min-width:0}
 .logo__text strong{display:block;font-size:15px;font-weight:700;line-height:1.25;transition:color .3s}
@@ -545,6 +545,12 @@ html.menu-open .logo__text small{color:rgba(255,255,255,.45)}
   .stats{grid-template-columns:repeat(2,1fr)}
 }
 
+/* 桌面端横滑时给卡片顶部留出安全区，避免 pin 接管后卡片贴到视口边缘。 */
+@media (min-width:900px){
+  .events .section-head{margin-bottom:clamp(64px,7vw,104px)}
+  .events-pin{padding-top:clamp(18px,2.4vw,34px)}
+}
+
 @media (max-width:768px){
   .hero{padding-top:96px;padding-bottom:110px}
   .hero-title{font-size:clamp(48px,13.5vw,80px)}
@@ -583,7 +589,8 @@ html.menu-open .logo__text small{color:rgba(255,255,255,.45)}
   .nav__inner{height:64px;gap:10px}
   .logo{gap:9px}
   .logo__mark{width:34px;height:34px;border-radius:10px;font-size:12px}
-  .logo__mark--img img{width:22px;height:22px}
+  .logo__mark--img{width:34px;height:34px;border-radius:10px}
+  .logo__mark--img img{width:100%;height:100%}
   .logo__text strong{font-size:13px}
   .logo__text small{font-size:8px;letter-spacing:.12em;line-height:1.55;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
   /* 首屏英文 eyebrow：允许换行，不再向右溢出截断 */
@@ -693,7 +700,7 @@ html.menu-open .logo__text small{color:rgba(255,255,255,.45)}
 .footer-legal{max-width:760px;margin:0 auto 34px;text-align:center;font-size:12px;line-height:2.1;color:var(--ink-40)}
 .footer-version{text-align:center;font-family:var(--font-d);font-size:11px;letter-spacing:.16em;color:var(--ink-40);margin-top:14px;opacity:.75}
 .footer-credit{text-align:center;font-size:12px;letter-spacing:.14em;color:var(--ink-40);margin-top:6px}
-.logo__mark--img img{width:26px;height:26px;object-fit:contain}
+.logo__mark--img img{width:100%;height:100%;object-fit:contain}
 .preloader__brand img{height:30px;vertical-align:-8px;margin-right:2px;background:#fff;padding:3px 6px;border-radius:8px;object-fit:contain}
 
 .nav__links a.active{color:var(--ink)}

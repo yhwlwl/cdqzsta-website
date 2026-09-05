@@ -61,6 +61,69 @@
     }, { once: true });
     return img;
   }
+
+  function logoSources() {
+    var preferred = C.brand && C.brand.logo;
+    return [preferred, 'image_dev/logo-sta.webp', 'image_dev/logo-sta.jpg']
+      .filter(function (src, i, list) { return src && list.indexOf(src) === i; });
+  }
+
+  function mountBrandLogo() {
+    var mark = $('.logo__mark'), sources = logoSources();
+    if (!mark || !sources.length) return;
+    var img = el('img');
+    img.alt = 'STA';
+    img.decoding = 'async';
+    var index = 0;
+    img.addEventListener('load', function () {
+      mark.classList.add('logo__mark--img');
+    });
+    img.addEventListener('error', function () {
+      index += 1;
+      if (index < sources.length) {
+        img.src = sources[index];
+        return;
+      }
+      mark.classList.remove('logo__mark--img');
+      mark.replaceChildren();
+      mark.textContent = (C.brand && C.brand.shortEN) || 'STA';
+    });
+    mark.classList.add('logo__mark--img');
+    mark.replaceChildren(img);
+    img.src = sources[0];
+    var fav = $('link[rel="icon"]');
+    if (fav) fav.setAttribute('href', sources[0]);
+  }
+
+  function initCursor() {
+    if (!fine.matches || motion.matches) return;
+    var dot = $('.cursor-dot'), ring = $('.cursor-ring');
+    if (!dot || !ring) return;
+    document.documentElement.classList.add('has-cursor');
+    var mx = -100, my = -100, rx = -100, ry = -100, shown = false;
+    window.addEventListener('mousemove', function (event) {
+      mx = event.clientX; my = event.clientY;
+      if (!shown) {
+        shown = true;
+        dot.style.opacity = 1;
+        ring.style.opacity = 1;
+      }
+    }, { passive: true });
+    var hoverSel = 'a,button,[data-magnetic]';
+    document.addEventListener('mouseover', function (event) {
+      if (event.target.closest(hoverSel)) ring.classList.add('is-hover');
+    });
+    document.addEventListener('mouseout', function (event) {
+      if (event.target.closest(hoverSel)) ring.classList.remove('is-hover');
+    });
+    (function loop() {
+      rx += (mx - rx) * .16;
+      ry += (my - ry) * .16;
+      dot.style.transform = 'translate3d(' + mx + 'px,' + my + 'px,0)';
+      ring.style.transform = 'translate3d(' + rx + 'px,' + ry + 'px,0)';
+      requestAnimationFrame(loop);
+    })();
+  }
   function animate(node, frames, duration, extra) {
     if (motion.matches || !node.animate) return Promise.resolve();
     return node.animate(frames, { duration: duration || 300, easing: 'cubic-bezier(.16,1,.3,1)', ...(extra || {}) }).finished.catch(function () {});
@@ -251,8 +314,7 @@
     var heading = el('div', 'b-heading'), text = el('div'), title = el('h2'); title.id = 'bulletin-title';
     var em = el('em'); em.append(el('span', '', '公告'));
     title.append(el('span', '', '通知'), em);
-    var desc = el('p', '', '来自科协的新消息，值得你停留。');
-    text.append(title, desc);
+    text.append(title);
     var mark = el('div', 'b-heading-mark'); mark.setAttribute('aria-hidden', 'true'); mark.append(icon());
     heading.append(text, mark);
     container.append(heading);
@@ -268,10 +330,11 @@
     container.append(board);
 
     var footer = el('div', 'b-footer');
-    footer.append(el('span', '', '消息有时效，热爱一直在线。'));
     var allBtn = button('查看全部公告', 'b-more', function () { location.href = 'notices.html'; });
     allBtn.append(icon('right'));
-    var replayButton = button('重播展开动效', '', replay); replayButton.append(icon('right'));
+    var replayButton = button('', 'b-replay', replay);
+    replayButton.setAttribute('aria-label', '重播公告动画');
+    replayButton.append(icon('right'));
     footer.append(allBtn, replayButton);
     container.append(footer);
 
@@ -497,8 +560,9 @@
     var state = { page: Math.max(1, parseInt(qs.get('page') || '1', 10)), category: qs.get('cat') || '', q: qs.get('q') || '' };
     var head = el('div', 'np-head');
     var h = el('div');
-    h.append(el('h1', '', '通知公告'));
-    h.append(el('p', '', '来自科协的新消息，值得你停留。'));
+    var title = el('h1');
+    title.append(el('span', '', '通知'), el('em', '', '公告'));
+    h.append(title);
     head.append(h);
     var tools = el('div', 'np-tools');
     var search = el('div', 'np-search');
@@ -575,7 +639,21 @@
     a.setAttribute('data-noanchor', '');
     var cover = el('div', 'np-card-cover');
     if (n.src) cover.append(photo(n.src, n.title));
-    else cover.append(el('span', 'np-cover-fallback', 'STA'));
+    else {
+      var fallback = el('span', 'np-cover-fallback', 'STA');
+      var logo = el('img', 'np-cover-logo');
+      logo.alt = 'STA'; logo.decoding = 'async';
+      var sources = logoSources(), sourceIndex = 0;
+      logo.addEventListener('load', function () { fallback.replaceChildren(logo); });
+      logo.addEventListener('error', function () {
+        sourceIndex += 1;
+        if (sourceIndex < sources.length) logo.src = sources[sourceIndex];
+        else logo.remove();
+      });
+      fallback.append(logo);
+      if (sources.length) logo.src = sources[0];
+      cover.append(fallback);
+    }
     a.append(cover);
     var body = el('div', 'np-card-body');
     var meta = el('div', 'np-card-meta');
@@ -685,6 +763,13 @@
     return (href || '#').indexOf('#') === 0 ? 'index.html' + href : href;
   }
   function renderShell() {
+    if (C.nav && C.nav.links) {
+      var noticeLink = C.nav.links.find(function (l) { return l.href === '#notices' || l.label === '公告'; });
+      C.nav.links = C.nav.links.filter(function (l) { return l.href !== '#notices' && l.label !== '公告'; });
+      C.nav.links.splice(1, 0, noticeLink || { label: '公告', href: '#notices' });
+    }
+    mountBrandLogo();
+    initCursor();
     var cn = $('[data-brand-cn]');
     if (cn && C.brand) cn.textContent = C.brand.nameCN;
     var en = $('[data-brand-en]');

@@ -157,6 +157,10 @@
     $('.nav__cta .btn__label').textContent = C.nav.ctaLabel;
 
     var linksWrap = $('.nav__links');
+    // Keep the notices entry second even when saved content uses an older order.
+    var noticeLink = C.nav.links.find(function (l) { return l.href === '#notices' || l.label === '公告'; });
+    C.nav.links = C.nav.links.filter(function (l) { return l.href !== '#notices' && l.label !== '公告'; });
+    C.nav.links.splice(1, 0, noticeLink || { label: '公告', href: '#notices' });
     C.nav.links.forEach(function (l) {
       var a = h('a', null, l.label);
       a.href = l.href;
@@ -821,12 +825,17 @@
     var mm = window.gsap.matchMedia();
     mm.add('(min-width: 900px)', function () {
       var dist = function () { return Math.max(0, track.scrollWidth - window.innerWidth); };
+      var pinTop = function () {
+        // Keep the heading and the card artwork visually separated while the
+        // horizontal section is pinned beneath the fixed navigation.
+        return Math.round(Math.min(128, Math.max(72, window.innerHeight * .13)));
+      };
       var tw = window.gsap.to(track, {
         x: function () { return -dist(); },
         ease: 'none',
         scrollTrigger: {
           trigger: '.events-pin',
-          start: 'top top',
+          start: function () { return 'top ' + pinTop() + 'px'; },
           end: function () { return '+=' + dist(); },
           pin: true,
           scrub: 1,

@@ -267,7 +267,7 @@
     const watermark=el('span','b-watermark','BULLETIN');watermark.setAttribute('aria-hidden','true');root.append(watermark);
     const container=el('div','container'),heading=el('div','b-heading'),text=el('div'),title=el('h2');title.id='bulletin-title';
     const em=el('em');em.append(el('span','','公告'));title.append(el('span','','通知'),em);
-    const desc=el('p','','来自科协的新消息，值得你停留。');desc.append(el('small','','设计演示，以下内容摘自云端已发布活动。'));
+    const desc=el('p','');desc.append(el('small','','设计演示，以下内容摘自云端已发布活动。'));
     text.append(title,desc);const mark=el('div','b-heading-mark');mark.setAttribute('aria-hidden','true');mark.append(icon());heading.append(text,mark);container.append(heading);
     const toolbar=el('div','b-toolbar'),tabs=el('div','b-tabs');tabs.setAttribute('role','group');tabs.setAttribute('aria-label','公告分类');
     ['全部',...new Set(source.map(s=>s.category))].forEach(category=>{
@@ -285,8 +285,8 @@
     toolbar.append(tabs,el('span','b-demo','活动素材 / 公告版式演示'));container.append(toolbar);
     const live=el('span','b-sr b-live');live.setAttribute('aria-live','polite');container.append(live);
     board=el('div','b-board');container.append(board);
-    const footer=el('div','b-footer');footer.append(el('span','','消息有时效，热爱一直在线。'));
-    const replayButton=button('重播展开动效','',replay);replayButton.append(icon('right'));footer.append(replayButton);container.append(footer);root.append(container);
+    const footer=el('div','b-footer');
+    const replayButton=button('','b-replay',replay);replayButton.setAttribute('aria-label','重播公告动画');replayButton.append(icon('right'));footer.append(replayButton);container.append(footer);root.append(container);
     $('#about').before(root);drawBoard();makeDialogs();addNav();mobileMotion();refresh();
     const observer=new IntersectionObserver(entries=>{
       if(entries.some(e=>e.isIntersecting)){replay();observer.disconnect();}
