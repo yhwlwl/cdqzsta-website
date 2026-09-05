@@ -295,26 +295,57 @@
     $('[data-depts-desc]').textContent = C.depts.desc;
     $('[data-ghost="TEAMS"]').textContent = C.depts.ghost;
     var list = $('[data-depts-list]');
+    list.before(h('p', 'depts-hint', '轻触部门，展开宣言与方向；再次轻触可收起。'));
     C.depts.items.forEach(function (d, i) {
       var row = h('div', 'dept-row');
+      var heading = h('div', 'dept-heading');
       row.setAttribute('data-en', d.en);
       row.setAttribute('data-art', d.art);
       row.setAttribute('data-motto', d.motto);
-      row.appendChild(h('span', 'dept-num', String(i + 1).padStart(2, '0')));
+      heading.appendChild(h('span', 'dept-num', String(i + 1).padStart(2, '0')));
       var main = h('div', 'dept-main');
-      main.appendChild(h('h3', 'dept-name', d.name));
+      var title = h('h3', 'dept-name', d.name);
+      title.id = 'dept-title-' + i;
+      var toggle = h('button', 'dept-toggle');
+      toggle.type = 'button';
+      toggle.id = 'dept-toggle-' + i;
+      toggle.setAttribute('aria-labelledby', title.id);
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.setAttribute('aria-controls', 'dept-detail-' + i);
+      main.appendChild(title);
       main.appendChild(h('p', 'dept-desc', d.desc));
       var heads = d.heads.map(function (hd) { return hd.role + '：' + hd.names.join(' · '); }).join('　');
       main.appendChild(h('p', 'dept-heads', heads));
-      row.appendChild(main);
+      heading.appendChild(main);
       var side = h('div', 'dept-side');
       var tags = h('div', 'dept-tags');
       d.tags.forEach(function (t) { tags.appendChild(h('span', null, t)); });
       side.appendChild(tags);
       var arrow = h('span', 'dept-arrow');
+      arrow.setAttribute('aria-hidden', 'true');
       arrow.innerHTML = ICONS.arrow;
       side.appendChild(arrow);
-      row.appendChild(side);
+      heading.appendChild(side);
+      heading.appendChild(toggle);
+      row.appendChild(heading);
+      var detail = h('div', 'dept-inline');
+      detail.id = 'dept-detail-' + i;
+      detail.hidden = true;
+      detail.setAttribute('role', 'region');
+      detail.setAttribute('aria-labelledby', toggle.id);
+      var book = h('div', 'dept-preview__art dept-inline__book ' + (d.art || 'g1'));
+      book.setAttribute('aria-hidden', 'true');
+      book.appendChild(h('span', 'dept-inline__en', d.en));
+      book.appendChild(h('span', 'dept-inline__name', d.name));
+      detail.appendChild(book);
+      var copy = h('div', 'dept-inline__copy');
+      copy.appendChild(h('p', 'dept-inline__label', '部门宣言'));
+      copy.appendChild(h('blockquote', 'dept-inline__motto', d.motto));
+      var directions = h('div', 'dept-tags dept-inline__tags');
+      d.tags.forEach(function (t) { directions.appendChild(h('span', null, t)); });
+      copy.appendChild(directions);
+      detail.appendChild(copy);
+      row.appendChild(detail);
       list.appendChild(row);
     });
 
@@ -841,37 +872,81 @@
   }
 
   function initDeptsPreview() {
-    if (!FINE || RM) return;
     var preview = $('.dept-preview');
     var list = $('[data-depts-list]');
-    if (!preview || !list) return;
-    if (window.innerWidth < 1024) return;
+    if (!list) return;
+    var rows = $$('.dept-row', list);
+    var hoverMedia = window.matchMedia('(min-width: 1024px) and (hover: hover) and (pointer: fine)');
+    function syncInputHint() {
+      var desc = $('[data-depts-desc]');
+      if (desc) desc.textContent = hoverMedia.matches ? C.depts.desc : String(C.depts.desc || '').replace(/悬停每一行/g, '轻触每一行');
+    }
+    syncInputHint();
+    var raf = 0;
+    function hidePreview() {
+      if (preview) preview.classList.remove('on');
+      cancelAnimationFrame(raf);
+      raf = 0;
+    }
+    function setExpanded(row, expanded) {
+      row.classList.toggle('is-open', expanded);
+      $('.dept-toggle', row).setAttribute('aria-expanded', String(expanded));
+      $('.dept-inline', row).hidden = !expanded;
+    }
+    rows.forEach(function (row) {
+      var button = $('.dept-toggle', row);
+      button.addEventListener('click', function () {
+        var top = row.getBoundingClientRect().top;
+        var expanded = !row.classList.contains('is-open');
+        rows.forEach(function (other) { setExpanded(other, other === row && expanded); });
+        hidePreview();
+        // Keep the tapped heading in place when an earlier department collapses.
+        var delta = row.getBoundingClientRect().top - top;
+        if (Math.abs(delta) > 1) {
+          if (lenis) lenis.scrollTo(window.scrollY + delta, { immediate: true });
+          else window.scrollBy({ top: delta, behavior: 'instant' });
+        }
+        if (hasST) window.ScrollTrigger.refresh();
+      });
+      row.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape' || !row.classList.contains('is-open')) return;
+        setExpanded(row, false);
+        button.focus({ preventScroll: true });
+        if (hasST) window.ScrollTrigger.refresh();
+      });
+    });
+    hoverMedia.addEventListener('change', function () { hidePreview(); syncInputHint(); });
+    if (!preview || RM) return;
     var art = $('.dept-preview__art', preview);
     var en = $('.dept-preview__en', preview);
     var motto = $('.dept-preview__motto', preview);
     var tx = window.innerWidth / 2, ty = window.innerHeight / 2, cx = tx, cy = ty;
-    window.addEventListener('mousemove', function (e) {
+    list.addEventListener('pointermove', function (e) {
       tx = e.clientX; ty = e.clientY;
     }, { passive: true });
-    $$('.dept-row').forEach(function (row) {
-      row.addEventListener('mouseenter', function () {
+    rows.forEach(function (row) {
+      row.addEventListener('pointerenter', function (e) {
+        if (!hoverMedia.matches || e.pointerType === 'touch' || row.classList.contains('is-open')) return;
+        tx = e.clientX; ty = e.clientY;
+        cx = tx; cy = ty;
         if (en) en.textContent = row.dataset.en || '';
         if (motto) motto.textContent = row.dataset.motto ? '【' + row.dataset.motto + '】' : '';
         if (art) art.className = 'dept-preview__art ' + (row.dataset.art || 'g1');
         preview.classList.add('on');
+        if (!raf) loop();
       });
+      row.addEventListener('pointerleave', hidePreview);
     });
-    list.addEventListener('mouseleave', function () {
-      preview.classList.remove('on');
-    });
-    (function loop() {
+    window.addEventListener('blur', hidePreview);
+    document.addEventListener('visibilitychange', hidePreview);
+    function loop() {
       cx = lerp(cx, tx, .11);
       cy = lerp(cy, ty, .11);
       var rot = (tx - cx) * .04;
       preview.style.transform = 'translate3d(' + cx.toFixed(1) + 'px,' + cy.toFixed(1) + 'px,0)';
       art.style.rotate = rot.toFixed(2) + 'deg';
-      requestAnimationFrame(loop);
-    })();
+      raf = requestAnimationFrame(loop);
+    }
   }
 
   function initMagnetic() {

@@ -21,6 +21,7 @@ window.SITE_CONTENT = {
   nav: {
     links: [
       { label: "首页", href: "#home" },
+      { label: "公告", href: "#notices" },
       { label: "关于", href: "#about" },
       { label: "历程", href: "#history" },
       { label: "架构", href: "#org" },

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>STA · 公告与移动动效设计预览</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#dce5f5;color:#eaf1ff;font:13px 'Microsoft YaHei',system-ui,sans-serif}
+    button,a{font:inherit}button{cursor:pointer}button:focus-visible,a:focus-visible{outline:2px solid #8fb0ff;outline-offset:3px}
+    .lab-bar{min-height:66px;padding:12px 22px;display:flex;gap:22px;align-items:center;background:#071233;position:relative;z-index:2}
+    .lab-brand{font-size:18px;font-weight:800;letter-spacing:-1px}.lab-title{font-weight:600;white-space:nowrap}.lab-title small{display:block;font-size:10px;font-weight:400;color:#9bafcf;margin-top:3px;letter-spacing:.08em}
+    .lab-tools{display:flex;align-items:center;gap:8px;margin-left:auto}.lab-segment{display:flex;padding:3px;background:#152346;border-radius:9px}
+    .lab-tools button{border:0;border-radius:7px;padding:8px 12px;background:transparent;color:#acbddb;white-space:nowrap}.lab-tools button[aria-pressed=true]{background:#eaf1ff;color:#071233}.lab-tools button:hover{color:#fff;background:#263b67}.lab-tools button[aria-pressed=true]:hover{color:#071233;background:#fff}
+    .lab-tools a{color:#afc6f5;text-decoration:none;font-size:11px;margin-left:4px}.lab-surface{height:calc(100dvh - 66px);padding:0;display:flex;justify-content:center;align-items:center;background:radial-gradient(ellipse at center,#f1f5ff,#d4dff2)}
+    .lab-frame{height:100%;width:100%;border:0;background:#f5f8ff;display:block}.lab-surface.mobile{padding:18px 12px}.mobile .lab-frame{width:390px;max-width:100%;border-radius:26px;box-shadow:0 16px 70px #07123330;outline:7px solid #edf3ff}
+    .lab-loading{position:fixed;inset:66px 0 0;display:grid;place-content:center;text-align:center;gap:14px;color:#071233;background:#f5f8ff;z-index:1}.lab-loading strong{font-size:36px;letter-spacing:-1px}.lab-loading p{font-size:13px;color:#536581}.lab-loading button{padding:10px 18px;border:0;background:#1d59f2;color:white;border-radius:24px}.lab-loading[hidden]{display:none}.lab-loading i{height:3px;width:160px;background:#dce7ff;overflow:hidden;margin:auto}.lab-loading i:after{content:'';display:block;width:60%;height:100%;background:#1d59f2;animation:load 1s ease-in-out infinite alternate}@keyframes load{to{transform:translateX(70%)}}
+    @media(max-width:850px){.lab-bar{gap:10px;padding:10px 12px;flex-wrap:wrap}.lab-title{font-size:12px}.lab-tools{gap:4px}.lab-tools button{padding:8px;font-size:11px}.lab-tools a{display:none}.lab-title small{max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+    @media(max-width:560px){.lab-bar{height:104px}.lab-tools{width:100%;margin:0;justify-content:space-between}.lab-surface{height:calc(100dvh - 104px)}.lab-loading{top:104px}.lab-surface.mobile{padding:0}.mobile .lab-frame{width:100%;outline:0;border-radius:0}}
+    @media(prefers-reduced-motion:reduce){*{animation:none!important}}
+  </style>
+</head>
+<body>
+  <header class="lab-bar">
+    <span class="lab-brand">STA</span>
+    <div class="lab-title">公告与移动动效<small id="lab-status">交互设计预览 · 正在读取主站</small></div>
+    <nav class="lab-tools" aria-label="设计预览控制">
+      <div class="lab-segment"><button data-mode="desktop" aria-pressed="true">电脑</button><button data-mode="mobile" aria-pressed="false">手机</button></div>
+      <button data-jump="notices">公告</button><button data-jump="depts">部门</button><button data-jump="home">全页</button><button id="replay">重播动效 ↻</button>
+      <a href="../../index.html" target="_blank" rel="noopener">打开主站 ↗</a>
+    </nav>
+  </header>
+  <main class="lab-surface"><iframe class="lab-frame" title="STA 完整主站与公告设计预览"></iframe></main>
+  <div class="lab-loading" role="status"><strong>STA</strong><i></i><p>正在展开这封来自科协的消息…</p></div>
+  <script src="host.js"></script>
+</body>
+</html>

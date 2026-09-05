@@ -230,7 +230,9 @@
       /* 注意：data-super 是无值属性，dataset.super 返回 ""（falsy），
          必须用 hasAttribute 判断，否则普通管理员也能看到管理员面板 */
       var okSuper = !b.hasAttribute('data-super') || ME.role === 'super';
-      var okPerm = !b.dataset.perm || hasPerm(b.dataset.perm);
+      var okPerm;
+      if (b.dataset.tab === 'notices') okPerm = hasPerm('notices') || hasPerm('content');
+      else okPerm = !b.dataset.perm || hasPerm(b.dataset.perm);
       b.hidden = !(okSuper && okPerm);
     });
     /* 兜底：管理员面板里的超管字段（添加表单含「超级管理员」角色、管理员列表）对普通管理员一律隐藏 */
@@ -298,7 +300,7 @@
     visual_open:     '进入可视化编辑',
     visual_close:    '退出可视化编辑'
   };
-  var TAB_NAMES = { content: '内容管理', logs: '访问日志', audit: '审计日志', admins: '管理员' };
+  var TAB_NAMES = { content: '内容管理', notices: '公告', logs: '访问日志', audit: '审计日志', admins: '管理员' };
 
   /* 上报一条审计事件（fire-and-forget：失败静默，不打扰操作） */
   function audit(action, detail) {
@@ -315,6 +317,7 @@
     if (name === 'content' && !DATA) {
       loadContent().catch(function (e) { toast(e.message || '载入内容失败', true); });
     }
+    if (name === 'notices') loadNotices().catch(function (e) { toast(e.message || '载入公告失败', true); });
     if (name === 'logs') loadLogs().catch(function (e) { toast(e.message || '载入日志失败', true); });
     if (name === 'audit') loadAudit().catch(function (e) { toast(e.message || '载入审计日志失败', true); });
     if (name === 'admins') {
@@ -1310,6 +1313,524 @@
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && VIS.on && !VIS.loading) closeVisual();
   });
+
+  /* ---------- 公告管理 ---------- */
+  var NS = { page: 1, per: 20, q: '', cat: '', status: '', sort: 'publish_at', items: [], total: 0, pages: 1, sel: {} };
+  var NED = null;   /* 当前编辑的公告 */
+  var NCB = [];     /* 正文受控内容块 */
+  var NCI = [];     /* 多图列表 */
+  var NCATS = ['招新', '活动通知', '公示', '刊物', '通知'];
+  var NSTATUS = { draft: '草稿', scheduled: '定时', published: '已发布', withdrawn: '已撤回', archived: '已归档', expired: '已过期' };
+
+  function toLocalDT(iso) {
+    if (!iso) return '';
+    var d = new Date(iso); if (isNaN(d)) return '';
+    var p = function (n) { return String(n).padStart(2, '0'); };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function fromLocalDT(v) {
+    if (!v) return null;
+    var d = new Date(v); return isNaN(d) ? null : d.toISOString();
+  }
+  function effStatus(n) {
+    if (n.status === 'published' && n.deadline_at && new Date(n.deadline_at) < new Date()) return 'expired';
+    return n.status;
+  }
+  function statusBadge(s) {
+    var cls = s === 'published' ? 'ok' : (s === 'expired' ? 'warn' : (s === 'draft' ? 'dim' : (s === 'scheduled' ? 'warn' : 'dim')));
+    return '<span class="badge ' + cls + '">' + (NSTATUS[s] || s) + '</span>';
+  }
+  function nf(n) {
+    return { id: n.id, slug: n.slug, title: n.title, summary: n.summary || '', category: n.category || '通知', department: n.department || '', cover: n.cover || '', content: n.content || [], images: n.images || [], detail_link: n.detail_link || '', action_label: n.action_label || '', action_url: n.action_url || '', is_pinned: !!n.is_pinned, sort_weight: n.sort_weight || 0, status: n.status || 'draft', publish_at: n.publish_at || null, schedule_at: n.schedule_at || null, deadline_at: n.deadline_at || null, version: n.version || 1 };
+  }
+
+  function loadNotices() {
+    return rpc('notice_list_admin', {
+      p_page: NS.page, p_per_page: NS.per, p_category: NS.cat || null,
+      p_status: NS.status || null, p_q: NS.q || null, p_sort: NS.sort, p_dir: 'desc'
+    }).then(function (d) {
+      NS.items = d.items || []; NS.total = d.total || 0; NS.pages = d.pages || 1;
+      renderNoticesTable();
+    });
+  }
+
+  function renderNoticesTable() {
+    var pages = Math.max(1, NS.pages);
+    if (NS.page > pages) NS.page = pages;
+    var html = '<table class="tbl"><thead><tr>' +
+      '<th><input type="checkbox" id="nc-all"></th><th>标题</th><th>分类</th><th>状态</th><th>置顶</th>' +
+      '<th>发布时间</th><th>截止</th><th>版本</th><th>操作</th></tr></thead><tbody>';
+    if (!NS.items.length) html += '<tr><td colspan="9" class="dim">没有符合条件的公告</td></tr>';
+    NS.items.forEach(function (n) {
+      var es = effStatus(n);
+      html += '<tr>' +
+        '<td><input type="checkbox" class="nc-chk" data-id="' + n.id + '"' + (NS.sel[n.id] ? ' checked' : '') + '></td>' +
+        '<td><a href="#" class="nc-edit" data-id="' + n.id + '">' + escHtml(n.title) + '</a></td>' +
+        '<td>' + escHtml(n.category) + '</td>' +
+        '<td>' + statusBadge(es) + '</td>' +
+        '<td>' + (n.is_pinned ? '★' : '—') + '</td>' +
+        '<td class="mono">' + (n.publish_at ? fmtLocal(n.publish_at) : '—') + '</td>' +
+        '<td class="mono">' + (n.deadline_at ? fmtLocal(n.deadline_at) : '—') + '</td>' +
+        '<td>v' + (n.version || 1) + '</td>' +
+        '<td><div class="row-ops">' +
+          '<button class="mini-btn" data-act="edit" data-id="' + n.id + '">编辑</button>' +
+          '<button class="mini-btn" data-act="preview" data-id="' + n.id + '">预览</button>' +
+          '<button class="mini-btn" data-act="dup" data-id="' + n.id + '">复制</button>' +
+          (n.status === 'published' ? '<button class="mini-btn" data-act="withdraw" data-id="' + n.id + '">撤回</button>' : '') +
+          (n.status !== 'archived' && n.status !== 'withdrawn' ? '<button class="mini-btn" data-act="archive" data-id="' + n.id + '">归档</button>' : '') +
+          '<button class="mini-btn danger" data-act="del" data-id="' + n.id + '">删除</button>' +
+          '</div></td></tr>';
+    });
+    html += '</tbody></table>';
+    $('#nc-table').innerHTML = html;
+    $('#nc-pageinfo').textContent = '第 ' + NS.page + ' / ' + pages + ' 页 · 共 ' + NS.total + ' 条';
+    $('#nc-all').checked = NS.items.length > 0 && NS.items.every(function (n) { return NS.sel[n.id]; });
+  }
+
+  function ncSelIds() {
+    return Object.keys(NS.sel);
+  }
+
+  $('#nc-table').addEventListener('change', function (e) {
+    var t = e.target;
+    if (t.id === 'nc-all') {
+      NS.sel = {};
+      NS.items.forEach(function (n) { NS.sel[n.id] = t.checked; });
+      renderNoticesTable();
+    } else if (t.classList.contains('nc-chk')) {
+      NS.sel[t.dataset.id] = t.checked;
+      if (!t.checked) delete NS.sel[t.dataset.id];
+      $('#nc-all').checked = NS.items.length > 0 && NS.items.every(function (n) { return NS.sel[n.id]; });
+    }
+  });
+
+  $('#nc-table').addEventListener('click', async function (e) {
+    var link = e.target.closest('.nc-edit');
+    if (link) { e.preventDefault(); openNoticeEditor(link.dataset.id); return; }
+    var btn = e.target.closest('button[data-act]');
+    if (!btn || btn.disabled) return;
+    var id = btn.dataset.id;
+    try {
+      if (btn.dataset.act === 'edit') openNoticeEditor(id);
+      else if (btn.dataset.act === 'preview') previewNotice(id);
+      else if (btn.dataset.act === 'dup') {
+        await rpc('notice_duplicate', { p_id: id }); toast('已复制为草稿'); loadNotices();
+      } else if (btn.dataset.act === 'withdraw') {
+        if (!confirm('确认撤回该公告？公开页面将不再展示。')) return;
+        await rpc('notice_set_status', { p_id: id, p_status: 'withdrawn' }); toast('已撤回'); loadNotices();
+      } else if (btn.dataset.act === 'archive') {
+        if (!confirm('确认归档该公告？')) return;
+        await rpc('notice_set_status', { p_id: id, p_status: 'archived' }); toast('已归档'); loadNotices();
+      } else if (btn.dataset.act === 'del') {
+        if (!confirm('确认删除该公告？此操作不可恢复。')) return;
+        await rpc('notice_delete', { p_id: id }); toast('已删除'); loadNotices();
+      }
+    } catch (ex) { toast(ex.message || '操作失败', true); }
+  });
+
+  var ncQTimer = null;
+  $('#nc-q').addEventListener('input', function () {
+    clearTimeout(ncQTimer);
+    ncQTimer = setTimeout(function () { NS.q = $('#nc-q').value.trim(); NS.page = 1; loadNotices().catch(function (e) { toast(e.message, true); }); }, 350);
+  });
+  $('#nc-cat').addEventListener('change', function () { NS.cat = this.value; NS.page = 1; loadNotices().catch(function (e) { toast(e.message, true); }); });
+  $('#nc-status').addEventListener('change', function () { NS.status = this.value; NS.page = 1; loadNotices().catch(function (e) { toast(e.message, true); }); });
+  $('#nc-sort').addEventListener('change', function () { NS.sort = this.value; NS.page = 1; loadNotices().catch(function (e) { toast(e.message, true); }); });
+  $('#nc-refresh').addEventListener('click', function () { loadNotices().catch(function (e) { toast(e.message, true); }); });
+  $('#nc-new').addEventListener('click', function () { openNoticeEditor(null); });
+  $('#nc-prev').addEventListener('click', function () { if (NS.page > 1) { NS.page--; loadNotices().catch(function (e) { toast(e.message, true); }); } });
+  $('#nc-next').addEventListener('click', function () { if (NS.page < NS.pages) { NS.page++; loadNotices().catch(function (e) { toast(e.message, true); }); } });
+  $('#nc-bulk-archive').addEventListener('click', async function () {
+    var ids = ncSelIds(); if (!ids.length) { toast('请先勾选公告', true); return; }
+    if (!confirm('确认归档选中的 ' + ids.length + ' 条公告？')) return;
+    try { await rpc('notice_bulk_status', { p_ids: ids, p_status: 'archived' }); NS.sel = {}; toast('已批量归档'); loadNotices(); } catch (e) { toast(e.message, true); }
+  });
+  $('#nc-bulk-withdraw').addEventListener('click', async function () {
+    var ids = ncSelIds(); if (!ids.length) { toast('请先勾选公告', true); return; }
+    if (!confirm('确认撤回选中的 ' + ids.length + ' 条公告？')) return;
+    try { await rpc('notice_bulk_status', { p_ids: ids, p_status: 'withdrawn' }); NS.sel = {}; toast('已批量撤回'); loadNotices(); } catch (e) { toast(e.message, true); }
+  });
+
+  /* ---------- 公告编辑器 ---------- */
+  function openNoticeEditor(id) {
+    $('#nc-list').hidden = true;
+    $('#nc-editor').hidden = false;
+    if (id) {
+      rpc('notice_get_admin', { p_id: id }).then(function (n) {
+        NED = nf(n); NCB = JSON.parse(JSON.stringify(NED.content || [])); NCI = JSON.parse(JSON.stringify(NED.images || []));
+        renderNoticeEditor();
+      }).catch(function (e) { toast(e.message || '载入公告失败', true); });
+    } else {
+      NED = nf({}); NCB = []; NCI = [];
+      renderNoticeEditor();
+    }
+  }
+  function backToNotices() {
+    $('#nc-editor').hidden = true; $('#nc-list').hidden = false;
+    loadNotices().catch(function () {});
+  }
+
+  function field(label, inner) {
+    var w = document.createElement('div'); w.className = 'field';
+    var lab = document.createElement('label'); lab.className = 'f-label'; lab.textContent = label;
+    w.appendChild(lab); w.appendChild(inner); return w;
+  }
+  function inputEl(type, value, cls, placeholder) {
+    var i = document.createElement('input');
+    if (cls) i.className = cls; i.type = type || 'text';
+    if (value != null) i.value = value;
+    if (placeholder) i.placeholder = placeholder;
+    return i;
+  }
+
+  function renderNoticeEditor() {
+    var root = $('#nc-editor');
+    root.innerHTML = '';
+    var bar = document.createElement('div'); bar.className = 'toolbar';
+    var h = document.createElement('h2'); h.textContent = (NED.id ? '编辑公告' : '新建公告');
+    var actions = document.createElement('div'); actions.className = 'toolbar-actions';
+    var back = miniBtn('← 返回列表', '', backToNotices);
+    actions.appendChild(back);
+    var saveDraft = miniBtn('保存草稿', '', function () { ncSave('draft'); });
+    var publish = miniBtn('发布', 'primary', function () { ncSave('published'); });
+    var sched = miniBtn('定时发布', '', function () { ncSave('scheduled'); });
+    var withdraw = miniBtn('撤回', '', function () { ncSave('withdrawn'); });
+    var archive = miniBtn('归档', '', function () { ncSave('archived'); });
+    var version = document.createElement('span'); version.className = 'save-status';
+    version.textContent = '版本 v' + (NED.version || 1) + (NED.status ? ' · ' + (NSTATUS[NED.status] || NED.status) : '');
+    actions.appendChild(version); actions.appendChild(saveDraft); actions.appendChild(sched);
+    actions.appendChild(publish); actions.appendChild(withdraw); actions.appendChild(archive);
+    bar.appendChild(h); bar.appendChild(actions);
+    root.appendChild(bar);
+
+    /* 基本信息 */
+    var grid = document.createElement('div'); grid.className = 'nc-grid';
+    var t = inputEl('text', NED.title, 'f-input', '公告标题');
+    t.addEventListener('input', function () { NED.title = t.value; });
+    grid.appendChild(field('标题 *', t));
+    var cat = document.createElement('select'); cat.className = 'ctl';
+    NCATS.forEach(function (c) { var o = document.createElement('option'); o.value = c; o.textContent = c; if (NED.category === c) o.selected = true; cat.appendChild(o); });
+    cat.addEventListener('change', function () { NED.category = cat.value; });
+    grid.appendChild(field('分类 *', cat));
+    var dept = inputEl('text', NED.department, 'f-input', '发布部门，如 STA 编辑部');
+    dept.addEventListener('input', function () { NED.department = dept.value; });
+    grid.appendChild(field('发布部门', dept));
+    var sum = document.createElement('textarea'); sum.className = 'f-area'; sum.rows = 3; sum.value = NED.summary;
+    sum.addEventListener('input', function () { NED.summary = sum.value; });
+    grid.appendChild(field('摘要', sum));
+    root.appendChild(grid);
+
+    /* 封面图 */
+    var coverWrap = document.createElement('div'); coverWrap.className = 'field';
+    var cl = document.createElement('label'); cl.className = 'f-label'; cl.textContent = '封面图';
+    coverWrap.appendChild(cl);
+    var coverRow = document.createElement('div'); coverRow.className = 'img-row';
+    var cov = inputEl('text', NED.cover, 'f-input', '封面图地址');
+    cov.addEventListener('input', function () { NED.cover = cov.value; updCov(); });
+    coverRow.appendChild(cov);
+    coverRow.appendChild(miniBtn('⬆ 上传', '', function () { imgDialog(cov.value, function (nv) { cov.value = nv; NED.cover = nv; updCov(); }); }));
+    coverWrap.appendChild(coverRow);
+    var covTh = document.createElement('img'); covTh.className = 'thumb';
+    coverWrap.appendChild(covTh);
+    function updCov() { covTh.src = imgSrc(NED.cover); covTh.hidden = !NED.cover; }
+    updCov();
+    root.appendChild(coverWrap);
+
+    /* 正文内容块 */
+    var blockGroup = document.createElement('div'); blockGroup.className = 'obj-group';
+    var bt = document.createElement('div'); bt.className = 'og-title'; bt.textContent = '正文内容块';
+    blockGroup.appendChild(bt);
+    var bCards = document.createElement('div'); bCards.className = 'cards'; bCards.id = 'nc-blocks';
+    blockGroup.appendChild(bCards);
+    var addBlock = miniBtn('+ 添加内容块', 'add-btn', function () {
+      NCB.push({ type: 'paragraph', text: '' }); renderBlocks();
+    });
+    blockGroup.appendChild(addBlock);
+    root.appendChild(blockGroup);
+
+    /* 多图列表 */
+    var imgGroup = document.createElement('div'); imgGroup.className = 'obj-group';
+    var it2 = document.createElement('div'); it2.className = 'og-title'; it2.textContent = '多图列表';
+    imgGroup.appendChild(it2);
+    var iCards = document.createElement('div'); iCards.className = 'cards'; iCards.id = 'nc-images';
+    imgGroup.appendChild(iCards);
+    var addImg = miniBtn('+ 添加图片', 'add-btn', function () {
+      NCI.push({ src: '', alt: '', caption: '' }); renderImages();
+    });
+    imgGroup.appendChild(addImg);
+    root.appendChild(imgGroup);
+
+    /* 链接与行动按钮 */
+    var linkGroup = document.createElement('div'); linkGroup.className = 'obj-group';
+    var lt = document.createElement('div'); lt.className = 'og-title'; lt.textContent = '链接与按钮';
+    linkGroup.appendChild(lt);
+    var dl = inputEl('text', NED.detail_link, 'f-input', '详情链接（可选）');
+    dl.addEventListener('input', function () { NED.detail_link = dl.value; });
+    linkGroup.appendChild(field('详情链接', dl));
+    var al = inputEl('text', NED.action_label, 'f-input', '行动按钮文字');
+    al.addEventListener('input', function () { NED.action_label = al.value; });
+    linkGroup.appendChild(field('行动按钮文字', al));
+    var au = inputEl('text', NED.action_url, 'f-input', '行动按钮地址');
+    au.addEventListener('input', function () { NED.action_url = au.value; });
+    linkGroup.appendChild(field('行动按钮地址', au));
+    root.appendChild(linkGroup);
+
+    /* 发布设置 */
+    var pubGroup = document.createElement('div'); pubGroup.className = 'obj-group';
+    var pt = document.createElement('div'); pt.className = 'og-title'; pt.textContent = '发布设置';
+    pubGroup.appendChild(pt);
+    var pgrid = document.createElement('div'); pgrid.className = 'nc-grid';
+    var pinWrap = document.createElement('div'); pinWrap.className = 'chk';
+    var pin = document.createElement('input'); pin.type = 'checkbox'; pin.checked = NED.is_pinned;
+    pin.addEventListener('change', function () { NED.is_pinned = pin.checked; });
+    pinWrap.appendChild(pin); pinWrap.appendChild(document.createTextNode(' 置顶'));
+    pgrid.appendChild(pinWrap);
+    var sw = inputEl('number', NED.sort_weight, 'f-input');
+    sw.addEventListener('input', function () { NED.sort_weight = parseInt(sw.value, 10) || 0; });
+    pgrid.appendChild(field('排序权重', sw));
+    var pubT = inputEl('datetime-local', toLocalDT(NED.publish_at), 'f-input');
+    pubT.addEventListener('change', function () { NED.publish_at = fromLocalDT(pubT.value); });
+    pgrid.appendChild(field('发布时间', pubT));
+    var schedT = inputEl('datetime-local', toLocalDT(NED.schedule_at), 'f-input');
+    schedT.addEventListener('change', function () { NED.schedule_at = fromLocalDT(schedT.value); });
+    pgrid.appendChild(field('定时发布时间', schedT));
+    var dlT = inputEl('datetime-local', toLocalDT(NED.deadline_at), 'f-input');
+    dlT.addEventListener('change', function () { NED.deadline_at = fromLocalDT(dlT.value); });
+    pgrid.appendChild(field('截止时间', dlT));
+    pubGroup.appendChild(pgrid);
+    root.appendChild(pubGroup);
+
+    var revBtn = miniBtn('历史版本', '', function () { noticeRevisions(); });
+    var delBtn = miniBtn('删除公告', 'danger', function () { ncDelete(); });
+    var row2 = document.createElement('div'); row2.className = 'toolbar-actions';
+    row2.appendChild(revBtn); row2.appendChild(delBtn);
+    root.appendChild(row2);
+
+    renderBlocks();
+    renderImages();
+  }
+
+  function renderBlocks() {
+    var host = $('#nc-blocks'); if (!host) return;
+    host.innerHTML = '';
+    NCB.forEach(function (b, i) {
+      var card = document.createElement('div'); card.className = 'item-card';
+      var head = document.createElement('div'); head.className = 'item-head';
+      head.appendChild(Object.assign(document.createElement('span'), { className: 'item-tag', textContent: '#' + (i + 1) }));
+      var typeSel = document.createElement('select'); typeSel.className = 'ctl';
+      [['paragraph', '段落'], ['heading', '标题'], ['image', '图片'], ['gallery', '多图画廊'], ['quote', '引用'], ['link_button', '链接按钮'], ['qr_image', '二维码图片']].forEach(function (o) {
+        var op = document.createElement('option'); op.value = o[0]; op.textContent = o[1];
+        if (b.type === o[0]) op.selected = true; typeSel.appendChild(op);
+      });
+      typeSel.addEventListener('change', function () {
+        b.type = typeSel.value;
+        if (b.type === 'paragraph' || b.type === 'heading' || b.type === 'quote') { b.text = b.text || ''; delete b.src; delete b.images; delete b.label; delete b.url; delete b.caption; }
+        else if (b.type === 'image' || b.type === 'qr_image') { b.src = b.src || ''; b.alt = b.alt || ''; b.caption = b.caption || ''; delete b.text; delete b.images; delete b.label; delete b.url; }
+        else if (b.type === 'gallery') { b.images = b.images || []; delete b.text; delete b.src; delete b.label; delete b.url; }
+        else if (b.type === 'link_button') { b.label = b.label || ''; b.url = b.url || ''; delete b.text; delete b.src; delete b.images; delete b.caption; }
+        renderBlocks();
+      });
+      head.appendChild(typeSel);
+      var ops = document.createElement('div'); ops.className = 'item-ops';
+      ops.appendChild(miniBtn('↑', '', function () { move(NCB, i, -1); renderBlocks(); }));
+      ops.appendChild(miniBtn('↓', '', function () { move(NCB, i, 1); renderBlocks(); }));
+      ops.appendChild(miniBtn('删除', 'danger', function () { NCB.splice(i, 1); renderBlocks(); }));
+      head.appendChild(ops);
+      card.appendChild(head);
+      var body = document.createElement('div'); body.className = 'nc-block-body';
+      if (b.type === 'paragraph' || b.type === 'quote') {
+        var ta = document.createElement('textarea'); ta.className = 'f-area'; ta.rows = 2; ta.value = b.text || '';
+        ta.addEventListener('input', function () { b.text = ta.value; });
+        body.appendChild(field(b.type === 'quote' ? '引用内容' : '段落内容', ta));
+      } else if (b.type === 'heading') {
+        var ht = inputEl('text', b.text || '', 'f-input', '标题文字');
+        ht.addEventListener('input', function () { b.text = ht.value; });
+        body.appendChild(field('标题文字', ht));
+      } else if (b.type === 'image' || b.type === 'qr_image') {
+        var ir = document.createElement('div'); ir.className = 'img-row';
+        var isrc = inputEl('text', b.src || '', 'f-input', '图片地址');
+        isrc.addEventListener('input', function () { b.src = isrc.value; });
+        ir.appendChild(isrc);
+        ir.appendChild(miniBtn('⬆ 上传', '', function () { imgDialog(isrc.value, function (nv) { isrc.value = nv; b.src = nv; }); }));
+        body.appendChild(field(b.type === 'qr_image' ? '二维码图片' : '图片', ir));
+        var alt = inputEl('text', b.alt || '', 'f-input', '替代文字');
+        alt.addEventListener('input', function () { b.alt = alt.value; });
+        body.appendChild(field('替代文字', alt));
+        var cap = inputEl('text', b.caption || '', 'f-input', '图注');
+        cap.addEventListener('input', function () { b.caption = cap.value; });
+        body.appendChild(field('图注', cap));
+      } else if (b.type === 'gallery') {
+        b.images.forEach(function (img, j) {
+          var gi = document.createElement('div'); gi.className = 'nc-gitem';
+          var ir = document.createElement('div'); ir.className = 'img-row';
+          var isrc = inputEl('text', img.src || '', 'f-input', '图片地址');
+          isrc.addEventListener('input', function () { img.src = isrc.value; });
+          ir.appendChild(isrc);
+          ir.appendChild(miniBtn('⬆ 上传', '', function () { imgDialog(isrc.value, function (nv) { isrc.value = nv; img.src = nv; }); }));
+          gi.appendChild(field('图片 ' + (j + 1), ir));
+          var gcap = inputEl('text', img.caption || '', 'f-input', '图注');
+          gcap.addEventListener('input', function () { img.caption = gcap.value; });
+          gi.appendChild(field('图注', gcap));
+          body.appendChild(gi);
+        });
+        var addG = miniBtn('+ 添加图', 'add-btn', function () { b.images.push({ src: '', alt: '', caption: '' }); renderBlocks(); });
+        body.appendChild(addG);
+      } else if (b.type === 'link_button') {
+        var lbl = inputEl('text', b.label || '', 'f-input', '按钮文字');
+        lbl.addEventListener('input', function () { b.label = lbl.value; });
+        body.appendChild(field('按钮文字', lbl));
+        var url = inputEl('text', b.url || '', 'f-input', '按钮地址');
+        url.addEventListener('input', function () { b.url = url.value; });
+        body.appendChild(field('按钮地址', url));
+      }
+      card.appendChild(body);
+      host.appendChild(card);
+    });
+  }
+
+  function renderImages() {
+    var host = $('#nc-images'); if (!host) return;
+    host.innerHTML = '';
+    NCI.forEach(function (img, i) {
+      var card = document.createElement('div'); card.className = 'item-card';
+      var head = document.createElement('div'); head.className = 'item-head';
+      head.appendChild(Object.assign(document.createElement('span'), { className: 'item-tag', textContent: '#' + (i + 1) }));
+      var ops = document.createElement('div'); ops.className = 'item-ops';
+      ops.appendChild(miniBtn('↑', '', function () { move(NCI, i, -1); renderImages(); }));
+      ops.appendChild(miniBtn('↓', '', function () { move(NCI, i, 1); renderImages(); }));
+      ops.appendChild(miniBtn('删除', 'danger', function () { NCI.splice(i, 1); renderImages(); }));
+      head.appendChild(ops);
+      card.appendChild(head);
+      var body = document.createElement('div'); body.className = 'nc-block-body';
+      var ir = document.createElement('div'); ir.className = 'img-row';
+      var isrc = inputEl('text', img.src || '', 'f-input', '图片地址');
+      isrc.addEventListener('input', function () { img.src = isrc.value; });
+      ir.appendChild(isrc);
+      ir.appendChild(miniBtn('⬆ 上传', '', function () { imgDialog(isrc.value, function (nv) { isrc.value = nv; img.src = nv; }); }));
+      body.appendChild(field('图片地址', ir));
+      var alt = inputEl('text', img.alt || '', 'f-input', '替代文字');
+      alt.addEventListener('input', function () { img.alt = alt.value; });
+      body.appendChild(field('替代文字', alt));
+      var cap = inputEl('text', img.caption || '', 'f-input', '图注');
+      cap.addEventListener('input', function () { img.caption = cap.value; });
+      body.appendChild(field('图注', cap));
+      card.appendChild(body);
+      host.appendChild(card);
+    });
+  }
+
+  function ncValidate(publish) {
+    if (!NED.title || !NED.title.trim()) return '标题不能为空';
+    if (!NED.category) return '请选择分类';
+    if (publish) {
+      var bad = NCB.filter(function (b) {
+        return (b.type === 'link_button' && b.url && !/^(https?:\/\/|#|\/)/.test(b.url));
+      });
+      if (bad.length) return '存在无效的链接按钮地址';
+    }
+    return null;
+  }
+
+  async function ncSave(status) {
+    /* 保存草稿：若已发布/定时/撤回/归档则保留原状态，避免编辑时误撤回 */
+    var target = status;
+    if (status === 'draft' && NED.id && NED.status && NED.status !== 'draft') target = NED.status;
+    var err = ncValidate(target === 'published' || target === 'scheduled');
+    if (err) { toast(err, true); return; }
+    NED.status = target;
+    var pdata = {
+      title: NED.title, summary: NED.summary, category: NED.category, department: NED.department,
+      cover: NED.cover, content: NCB, images: NCI, detail_link: NED.detail_link,
+      action_label: NED.action_label, action_url: NED.action_url,
+      is_pinned: NED.is_pinned, sort_weight: NED.sort_weight, status: target,
+      publish_at: target === 'published' ? (NED.publish_at || new Date().toISOString()) : NED.publish_at,
+      schedule_at: target === 'scheduled' ? (NED.schedule_at || new Date().toISOString()) : NED.schedule_at,
+      deadline_at: NED.deadline_at
+    };
+    try {
+      var res = await rpc('notice_save', { p_id: NED.id || null, p_expected_version: NED.id ? NED.version : null, p_data: pdata });
+      toast(target === 'published' ? '已发布' : (target === 'scheduled' ? '已设置定时' : (target === 'withdrawn' ? '已撤回' : (target === 'archived' ? '已归档' : '已保存'))));
+      NED.version = res.version;
+      backToNotices();
+    } catch (e) {
+      toast(e.message || '保存失败', true);
+    }
+  }
+
+  async function ncDelete() {
+    if (!NED.id) { backToNotices(); return; }
+    if (!confirm('确认删除该公告？不可恢复。')) return;
+    try { await rpc('notice_delete', { p_id: NED.id }); toast('已删除'); backToNotices(); } catch (e) { toast(e.message, true); }
+  }
+
+  function noticeRevisions() {
+    if (!NED.id) { toast('请先保存该公告', true); return; }
+    rpc('notice_revisions', { p_id: NED.id }).then(function (list) {
+      var panel = document.createElement('div'); panel.className = 'dlg-mask';
+      var box = document.createElement('div'); box.className = 'dlg';
+      box.innerHTML = '<h3>历史版本</h3><div class="dlg-msg"></div><div class="dlg-acts"><button type="button" class="btn-ghost-sm dlg-cancel">关闭</button></div>';
+      var msg = box.querySelector('.dlg-msg');
+      if (!list || !list.length) msg.innerHTML = '<p class="dim">暂无历史版本</p>';
+      (list || []).forEach(function (r) {
+        var item = document.createElement('div'); item.className = 'h-item';
+        item.textContent = '#' + r.id + ' · ' + fmtLocal(r.created_at);
+        item.addEventListener('click', async function () {
+          if (!confirm('载入历史版本 #' + r.id + '？')) return;
+          NCB = JSON.parse(JSON.stringify(r.data.content || []));
+          NCI = JSON.parse(JSON.stringify(r.data.images || []));
+          NED.title = r.data.title || NED.title; NED.summary = r.data.summary || NED.summary;
+          NED.category = r.data.category || NED.category; NED.department = r.data.department || NED.department;
+          NED.cover = r.data.cover || NED.cover; NED.detail_link = r.data.detail_link || NED.detail_link;
+          NED.action_label = r.data.action_label || NED.action_label; NED.action_url = r.data.action_url || NED.action_url;
+          NED.is_pinned = r.data.is_pinned || false; NED.sort_weight = r.data.sort_weight || 0;
+          NED.deadline_at = r.data.deadline_at || null;
+          renderNoticeEditor(); panel.remove(); toast('已载入历史版本，检查后保存');
+        });
+        msg.appendChild(item);
+      });
+      box.querySelector('.dlg-cancel').addEventListener('click', function () { panel.remove(); });
+      panel.addEventListener('click', function (e) { if (e.target === panel) panel.remove(); });
+      document.body.appendChild(panel);
+    }).catch(function (e) { toast(e.message, true); });
+  }
+
+  /* ---------- 公告预览 ---------- */
+  function blockHtml(b) {
+    if (!b) return '';
+    if (b.type === 'paragraph') return '<p class="nc-block nc-p">' + escHtml(b.text || '') + '</p>';
+    if (b.type === 'heading') return '<h3 class="nc-block nc-h' + (b.level === 2 ? ' nc-h2' : '') + '">' + escHtml(b.text || '') + '</h3>';
+    if (b.type === 'quote') return '<blockquote class="nc-block nc-quote">' + escHtml(b.text || '') + '</blockquote>';
+    if (b.type === 'image') return '<figure class="nc-figure"><img class="nc-prev-img" src="' + escHtml(b.src || '') + '" alt="' + escHtml(b.alt || '') + '">' + (b.caption ? '<figcaption>' + escHtml(b.caption) + '</figcaption>' : '') + '</figure>';
+    if (b.type === 'qr_image') return '<figure class="nc-figure nc-qr"><img class="nc-prev-img" src="' + escHtml(b.src || '') + '" alt="' + escHtml(b.alt || '') + '">' + (b.caption ? '<figcaption>' + escHtml(b.caption) + '</figcaption>' : '') + '</figure>';
+    if (b.type === 'gallery') return '<div class="nc-gal">' + (b.images || []).map(function (img) { return '<figure class="nc-figure"><img class="nc-prev-img" src="' + escHtml(img.src || '') + '" alt="' + escHtml(img.alt || '') + '">' + (img.caption ? '<figcaption>' + escHtml(img.caption) + '</figcaption>' : '') + '</figure>'; }).join('') + '</div>';
+    if (b.type === 'link_button') return '<a class="nc-block nc-linkbtn" href="' + escHtml(b.url || '#') + '">' + escHtml(b.label || '') + '</a>';
+    return '';
+  }
+
+  function previewNotice(id) {
+    rpc('notice_get_admin', { p_id: id }).then(function (n) {
+      var panel = document.createElement('div'); panel.className = 'dlg-mask';
+      var box = document.createElement('div'); box.className = 'dlg nc-preview';
+      box.innerHTML = '<h3>公告预览</h3>' +
+        '<div class="nc-prev-tools"><button type="button" class="btn-ghost-sm nc-mode" data-mode="desktop">电脑</button><button type="button" class="btn-ghost-sm nc-mode" data-mode="mobile">手机</button></div>' +
+        '<div class="nc-prev-stage"><div class="nc-prev-article"></div></div>' +
+        '<div class="dlg-acts"><button type="button" class="btn-ghost-sm dlg-cancel">关闭</button></div>';
+      var stage = box.querySelector('.nc-prev-stage');
+      var article = box.querySelector('.nc-prev-article');
+      var meta = '<div class="nc-prev-meta"><span class="np-cat">' + escHtml(n.category || '通知') + '</span>' + (n.department ? '<span>' + escHtml(n.department) + '</span>' : '') + (n.publish_at ? '<time>' + fmtLocal(n.publish_at) + '</time>' : '') + '</div>';
+      var body = (n.content || []).map(blockHtml).join('');
+      var gallery = (n.images || []).map(function (img) { return '<figure class="nc-figure"><img class="nc-prev-img" src="' + escHtml(img.src || '') + '" alt="' + escHtml(img.alt || '') + '">' + (img.caption ? '<figcaption>' + escHtml(img.caption) + '</figcaption>' : '') + '</figure>'; }).join('');
+      var act = (n.action_label && n.action_url) ? '<a class="nc-block nc-linkbtn" href="' + escHtml(n.action_url) + '">' + escHtml(n.action_label) + '</a>' : '';
+      article.innerHTML = '<h1 class="nc-prev-title">' + escHtml(n.title) + '</h1>' + meta + '<div class="nc-prev-body">' + body + gallery + act + '</div>';
+      function setMode(m) { stage.classList.toggle('mobile', m === 'mobile'); }
+      box.querySelectorAll('.nc-mode').forEach(function (b) {
+        b.addEventListener('click', function () { setMode(b.dataset.mode); });
+      });
+      box.querySelector('.dlg-cancel').addEventListener('click', function () { panel.remove(); });
+      panel.addEventListener('click', function (e) { if (e.target === panel) panel.remove(); });
+      document.body.appendChild(panel);
+    }).catch(function (e) { toast(e.message, true); });
+  }
 
   /* ---------- 启动 ---------- */
   window.addEventListener('unhandledrejection', function (e) {

@@ -1,0 +1,1831 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>STA · 全息星环列车开屏实验室 (STELLAR ORBITAL EXPRESS)</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231D59F2'/%3E%3Cpath d='M10 21L22 11M22 11h-8m8 0v8' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================================
+   1. 基础重置与配色变量 (DESIGN TOKENS)
+   ========================================================================== */
+:root {
+  --bg: #040A1D;
+  --bg-deep: #020612;
+  --bg-card: rgba(8, 20, 52, 0.72);
+  --ink: #EAF2FF;
+  --ink-90: rgba(234, 242, 255, 0.9);
+  --ink-60: rgba(234, 242, 255, 0.62);
+  --ink-40: rgba(234, 242, 255, 0.38);
+  --ink-20: rgba(234, 242, 255, 0.16);
+  --blue: #1D59F2;
+  --blue-bright: #4D7CFF;
+  --cyan: #00F0FF;
+  --cyan-glow: #7DF9FF;
+  --pale: #8FB0FF;
+  --sky: #DCE7FF;
+  --gold: #FFD166;
+  --font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --ease-cinematic: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-expo: cubic-bezier(0.19, 1, 0.22, 1);
+  --ease-power4: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-deep);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==========================================================================
+   2. 交互控制顶栏 (LAB CONTROL BAR)
+   ========================================================================== */
+.lab-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 clamp(16px, 2.5vw, 36px);
+  background: rgba(4, 10, 29, 0.78);
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  border-bottom: 1px solid rgba(143, 176, 255, 0.14);
+}
+
+.brand-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-logo-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  background: linear-gradient(135deg, rgba(29, 89, 242, 0.35), rgba(77, 124, 255, 0.15));
+  border: 1px solid rgba(143, 176, 255, 0.3);
+  border-radius: 999px;
+}
+
+.brand-logo-pill b {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  background: linear-gradient(120deg, #FFFFFF, var(--sky));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.brand-logo-pill span {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--pale);
+}
+
+.brand-subtitle {
+  font-size: 12px;
+  color: var(--ink-40);
+  letter-spacing: 0.06em;
+}
+
+@media (max-width: 768px) {
+  .brand-subtitle { display: none; }
+}
+
+.lab-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.seg-group {
+  display: flex;
+  background: rgba(8, 20, 52, 0.6);
+  border: 1px solid rgba(143, 176, 255, 0.18);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.seg-btn {
+  background: transparent;
+  border: none;
+  color: var(--ink-40);
+  font-family: var(--font-display);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.seg-btn:hover {
+  color: var(--ink);
+  background: rgba(29, 89, 242, 0.18);
+}
+
+.seg-btn.active {
+  color: #FFFFFF;
+  background: rgba(29, 89, 242, 0.55);
+  box-shadow: inset 0 0 12px rgba(77, 124, 255, 0.35);
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 18px;
+  background: linear-gradient(135deg, var(--blue), var(--blue-bright));
+  color: #FFFFFF;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(29, 89, 242, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: transform 0.15s var(--ease-power4), filter 0.2s;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: scale(0.96);
+}
+
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(143, 176, 255, 0.2);
+  background: rgba(8, 20, 52, 0.6);
+  color: var(--ink-60);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-icon:hover {
+  color: #FFFFFF;
+  border-color: rgba(77, 124, 255, 0.6);
+  background: rgba(29, 89, 242, 0.25);
+}
+
+/* ==========================================================================
+   3. 主视口与舞台层级 (STAGE & CURTAIN ARCHITECTURE)
+   ========================================================================== */
+.viewport {
+  position: absolute;
+  top: 60px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  background: radial-gradient(120% 100% at 50% 50%, #07133a 0%, var(--bg-deep) 80%);
+}
+
+/* 真实首页假想层 (MOCK HOMEPAGE - 被揭幕的页面) */
+.homepage-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(85% 65% at 75% 15%, rgba(29, 89, 242, 0.22) 0%, transparent 60%),
+    radial-gradient(90% 70% at 15% 85%, rgba(0, 240, 255, 0.12) 0%, transparent 65%),
+    var(--bg-deep);
+  overflow: hidden;
+}
+
+/* 首页粒子网格背景 */
+.homepage-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* 首页顶栏与内容 */
+.mock-nav {
+  position: relative;
+  z-index: 5;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 clamp(24px, 5vw, 80px);
+  border-bottom: 1px solid rgba(143, 176, 255, 0.1);
+  transform: translateY(-100%);
+  opacity: 0;
+  transition: transform 0.9s var(--ease-cinematic), opacity 0.8s ease;
+}
+
+.mock-nav.entered {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.mock-nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mock-nav-logo .sq {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--blue), var(--cyan));
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: #fff;
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);
+}
+
+.mock-nav-logo .tx b {
+  display: block;
+  font-size: 13.5px;
+  letter-spacing: 0.06em;
+}
+
+.mock-nav-logo .tx small {
+  font-family: var(--font-display);
+  font-size: 9px;
+  color: var(--ink-40);
+  letter-spacing: 0.18em;
+}
+
+.mock-nav-links {
+  display: flex;
+  gap: 28px;
+}
+
+.mock-nav-links a {
+  color: var(--ink-60);
+  text-decoration: none;
+  font-size: 13.5px;
+  letter-spacing: 0.04em;
+  transition: color 0.2s;
+}
+
+.mock-nav-links a:hover {
+  color: var(--cyan-glow);
+}
+
+.mock-hero {
+  position: relative;
+  z-index: 5;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 clamp(24px, 7vw, 120px);
+  max-width: 1380px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.mock-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  padding: 6px 16px;
+  background: rgba(29, 89, 242, 0.18);
+  border: 1px solid rgba(143, 176, 255, 0.35);
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  color: var(--sky);
+  margin-bottom: 24px;
+  transform: translateY(30px);
+  opacity: 0;
+  transition: transform 0.9s var(--ease-cinematic) 0.15s, opacity 0.8s ease 0.15s;
+}
+
+.mock-title {
+  font-family: var(--font-display), var(--font-body);
+  font-size: clamp(38px, 6.2vw, 76px);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  margin-bottom: 20px;
+}
+
+.mock-title .line {
+  display: block;
+  overflow: hidden;
+}
+
+.mock-title .line span {
+  display: block;
+  transform: translateY(110%);
+  transition: transform 1.1s var(--ease-cinematic);
+}
+
+.mock-title .line:nth-child(1) span { transition-delay: 0.25s; }
+.mock-title .line:nth-child(2) span {
+  transition-delay: 0.35s;
+  background: linear-gradient(120deg, #FFFFFF 20%, var(--pale) 60%, var(--cyan) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.mock-desc {
+  max-width: 580px;
+  font-size: clamp(14px, 1.3vw, 17px);
+  color: var(--ink-60);
+  line-height: 1.85;
+  margin-bottom: 34px;
+  transform: translateY(30px);
+  opacity: 0;
+  transition: transform 0.9s var(--ease-cinematic) 0.45s, opacity 0.8s ease 0.45s;
+}
+
+.mock-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  transform: translateY(30px);
+  opacity: 0;
+  transition: transform 0.9s var(--ease-cinematic) 0.55s, opacity 0.8s ease 0.55s;
+}
+
+.mock-badge {
+  padding: 8px 18px;
+  background: var(--bg-card);
+  border: 1px solid rgba(143, 176, 255, 0.22);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--sky);
+  backdrop-filter: blur(10px);
+}
+
+.mock-badge b {
+  font-family: var(--font-display);
+  color: var(--cyan);
+  margin-right: 6px;
+}
+
+.homepage-stage.entered .mock-eyebrow,
+.homepage-stage.entered .mock-desc,
+.homepage-stage.entered .mock-badges {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.homepage-stage.entered .mock-title .line span {
+  transform: translateY(0);
+}
+
+/* ==========================================================================
+   4. 开屏全息幕布 (THE STELLAR ORBITAL CURTAIN)
+   ========================================================================== */
+.splash-curtain {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  background: var(--bg-deep);
+  will-change: transform, opacity, clip-path;
+  transition: opacity 0.8s var(--ease-cinematic), clip-path 0.8s var(--ease-cinematic);
+}
+
+.splash-curtain.cleared {
+  pointer-events: none;
+  opacity: 0;
+  clip-path: circle(150% at 50% 50%);
+}
+
+.splash-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* 宇宙颗粒与暗角滤镜 */
+.cosmic-grain {
+  position: absolute;
+  inset: -50%;
+  z-index: 35;
+  pointer-events: none;
+  opacity: 0.038;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.7'/%3E%3C/svg%3E");
+}
+
+.vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 34;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, transparent 50%, rgba(2, 6, 18, 0.75) 100%);
+}
+
+/* HUD 遥测信息角标 */
+.hud-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 36;
+  pointer-events: none;
+  padding: clamp(20px, 3.5vw, 40px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.hud-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.hud-tag {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  color: var(--pale);
+  text-shadow: 0 0 12px rgba(77, 124, 255, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hud-tag::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  background: var(--cyan);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--cyan);
+  animation: radarPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes radarPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.6); opacity: 0.4; }
+}
+
+.hud-status {
+  text-align: right;
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  color: var(--ink-40);
+}
+
+.hud-status b {
+  color: var(--sky);
+  font-weight: 600;
+}
+
+.hud-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.hud-brand {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--sky);
+}
+
+.hud-brand small {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.28em;
+  color: var(--ink-40);
+  margin-top: 2px;
+}
+
+.hud-phase {
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  color: var(--pale);
+  text-align: right;
+}
+
+.hud-phase-cn {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: #FFFFFF;
+  margin-bottom: 2px;
+}
+
+/* 超新星白光爆闪 (SUPERNOVA FLASH) */
+.supernova-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 38;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 48%, rgba(255, 255, 255, 0.95) 0%, rgba(125, 249, 255, 0.4) 30%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.2s ease-out;
+}
+
+/* 时间进度滑块与状态条 (BOTTOM PROGRESS SCRUBBER) */
+.timeline-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  z-index: 40;
+  background: rgba(234, 242, 255, 0.1);
+  cursor: pointer;
+}
+
+.timeline-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--blue), var(--cyan), #FFFFFF);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.7);
+}
+
+/* ==========================================================================
+   5. 设计说明抽屉 (DESIGN SPEC DRAWER)
+   ========================================================================== */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background: rgba(2, 6, 18, 0.75);
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.drawer-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.drawer-content {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(520px, 92vw);
+  z-index: 151;
+  background: rgba(7, 18, 51, 0.95);
+  border-left: 1px solid rgba(143, 176, 255, 0.2);
+  padding: 36px 30px;
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.4s var(--ease-cinematic);
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.6);
+}
+
+.drawer-backdrop.open .drawer-content {
+  transform: translateX(0);
+}
+
+.drawer-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(143, 176, 255, 0.15);
+}
+
+.drawer-head h2 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.drawer-head button {
+  background: none;
+  border: none;
+  color: var(--ink-60);
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.spec-block {
+  margin-bottom: 24px;
+}
+
+.spec-block h3 {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--cyan);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.spec-block h3::before {
+  content: '';
+  width: 4px;
+  height: 12px;
+  background: var(--blue-bright);
+  border-radius: 2px;
+}
+
+.spec-block p {
+  font-size: 13.5px;
+  color: var(--ink-60);
+  line-height: 1.8;
+}
+
+.spec-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.spec-list li {
+  font-size: 13px;
+  color: var(--sky);
+  background: rgba(8, 20, 52, 0.5);
+  padding: 10px 14px;
+  border-radius: 8px;
+  border-left: 3px solid var(--blue-bright);
+}
+
+.spec-list li b {
+  color: #fff;
+  font-weight: 600;
+}
+</style>
+</head>
+<body>
+
+<!-- 交互控制顶栏 -->
+<header class="lab-header">
+  <div class="brand-badge">
+    <div class="brand-logo-pill">
+      <b>STA</b>
+      <span>ORBITAL LAB</span>
+    </div>
+    <span class="brand-subtitle">全息三维点云列车 · 星环轨道与逆流聚字</span>
+  </div>
+
+  <div class="lab-controls">
+    <div class="seg-group" id="speedSeg">
+      <button class="seg-btn active" data-speed="1">1.0×</button>
+      <button class="seg-btn" data-speed="0.5">0.5×</button>
+      <button class="seg-btn" data-speed="0.25">0.25×</button>
+    </div>
+
+    <button class="btn-primary" id="btnReplay">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+      重新启程 (R)
+    </button>
+
+    <button class="btn-icon" id="btnInfo" title="查看设计方案详情">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- 主视口 -->
+<main class="viewport" id="viewport">
+
+  <!-- 站点假想页 (被揭幕的真实首页) -->
+  <div class="homepage-stage" id="mockHome">
+    <canvas class="homepage-canvas" id="homeCanvas"></canvas>
+    
+    <nav class="mock-nav" id="mockNav">
+      <div class="mock-nav-logo">
+        <div class="sq">STA</div>
+        <div class="tx">
+          <b>成都七中科学技术协会</b>
+          <small>SCIENCE &amp; TECHNOLOGY ASSOCIATION</small>
+        </div>
+      </div>
+      <div class="mock-nav-links">
+        <a href="#about">关于我们</a>
+        <a href="#history">历史沿革</a>
+        <a href="#org">组织架构</a>
+        <a href="#depts">部门介绍</a>
+        <a href="#events">品牌活动</a>
+      </div>
+    </nav>
+
+    <div class="mock-hero">
+      <div class="mock-eyebrow">CHENGDU NO.7 HIGH SCHOOL · SINCE 1999</div>
+      <h1 class="mock-title">
+        <div class="line"><span>探索未知边疆，</span></div>
+        <div class="line"><span>点亮少年极客星火。</span></div>
+      </h1>
+      <p class="mock-desc">
+        四川省首个高中生科技类学生组织。集结编程、机器人、人工智能、新媒体与创客先锋，以好奇心驱动每一次突破与创造。
+      </p>
+      <div class="mock-badges">
+        <div class="mock-badge"><b>25+</b> 载卓越传承</div>
+        <div class="mock-badge"><b>6</b> 大核心技术部门</div>
+        <div class="mock-badge"><b>1000+</b> 极客校友网络</div>
+        <div class="mock-badge"><b>30+</b> 顶尖科创赛事荣誉</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 开屏全息幕布层 -->
+  <div class="splash-curtain" id="splashCurtain">
+    <canvas class="splash-canvas" id="splashCanvas"></canvas>
+    <div class="cosmic-grain"></div>
+    <div class="vignette"></div>
+
+    <div class="hud-layer">
+      <div class="hud-top">
+        <div class="hud-tag">STELLAR ORBITAL TRANSIT</div>
+        <div class="hud-status">
+          VELOCITY <b id="hudVel">0.00 c</b> &nbsp;|&nbsp; DIST <b id="hudDist">0.0 ly</b>
+        </div>
+      </div>
+
+      <div class="hud-bottom">
+        <div class="hud-brand">
+          STA GINGA EXPRESS
+          <small>成都七中科学技术协会 · 全息启程</small>
+        </div>
+        <div class="hud-phase">
+          <div class="hud-phase-cn" id="hudPhaseCn">星环共振 · 启程</div>
+          <span id="hudPhaseEn">ORBITAL RESONANCE</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="supernova-flash" id="supernovaFlash"></div>
+    <div class="timeline-bar" id="timelineBar" title="点击或拖动跳转进度">
+      <div class="timeline-fill" id="timelineFill"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- 设计说明抽屉 -->
+<div class="drawer-backdrop" id="drawerBackdrop">
+  <div class="drawer-content">
+    <div class="drawer-head">
+      <h2>全息星环列车 · 设计全景</h2>
+      <button id="btnCloseDrawer">&times;</button>
+    </div>
+
+    <div class="spec-block">
+      <h3>01 · 纯三维体积点云列车 (Point Cloud Entity)</h3>
+      <p>
+        告别传统平面贴图与 SVG，列车本体由 <b>2,800+ 个发光三维粒子</b> 精密构建。包含流线型子弹头导流罩、双排座舱舷窗光带、车脊高亮结构线与受电弓电弧闪烁。
+      </p>
+      <ul class="spec-list">
+        <li><b>真实空间透视</b>：依据 <code>Scale = f / z</code> 严密计算，近景掠过时车身剧烈放大，转弯时呈现自然的空气动力学倾侧（Centrifugal Banking）。</li>
+        <li><b>超新星双大灯</b>：车头搭载前向三维立体光锥与 Lens Flare 漫射晕影。</li>
+      </ul>
+    </div>
+
+    <div class="spec-block">
+      <h3>02 · 单一构图与星环绕行 (Orbital Composition)</h3>
+      <p>
+        居中后仰 58° 的巨大三维立体星环，既是空间星门轨道，也是加载进度的可视化载体。
+      </p>
+      <ul class="spec-list">
+        <li><b>0.0s – 2.8s</b>：列车贴环逆时针绕行整整一周，从远端微光逐渐飙升至近景前景，产生磅礴的尺度压迫感。</li>
+        <li><b>环心 HUD</b>：三维空间居中悬浮呼吸的 Space Grotesk 字体百分比进度。</li>
+      </ul>
+    </div>
+
+    <div class="spec-block">
+      <h3>03 · 左下掠入与右上狂飙 (Slingshot Breakout)</h3>
+      <p>
+        <b>2.8s – 3.8s</b>：列车脱离星环引力，沿三次贝塞尔加速曲线从<b>屏幕左下角近景猛烈掠入</b>，车头昂扬，以极具冲击力的对角线姿态<b>全速冲向右上角深空</b>，伴随动态镜头震颤与风阻光线。
+      </p>
+    </div>
+
+    <div class="spec-block">
+      <h3>04 · 星尘逆流与 STA 凝聚 (Reverse Morphing)</h3>
+      <p>
+        <b>3.8s – 4.8s</b>：列车在右上角超光速瓦解，中心激活强引力奇点。万千金色与冰蓝星尘受引力漩涡召唤<b>逆流倒卷</b>，在弹簧阻尼物理场中精准咬合重构为巨型<b>「STA」</b>徽标！
+      </p>
+    </div>
+
+    <div class="spec-block">
+      <h3>05 · 超新星爆闪与首页无缝揭幕 (Seamless Handshake)</h3>
+      <p>
+        <b>4.8s – 5.4s</b>：中央「STA」爆发纯白冲击波光环，幕布以柔和的漫反射光晕淡出，首页导航栏从天而降，主标题文字交错上浮，背景星尘与首页交互 Canvas 无缝接力。
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==========================================================================
+   6. 核心渲染与动力学引擎 (STELLAR ORBITAL ENGINE)
+   ========================================================================== */
+(function () {
+  'use strict';
+
+  // ------------------------------------------------------------------------
+  // 数学与缓动工具函数
+  // ------------------------------------------------------------------------
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+  const lerp = (a, b, n) => a + (b - a) * n;
+  const rnd = (min, max) => min + Math.random() * (max - min);
+
+  function easeInOutCubic(x) {
+    return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+  }
+  function easeOutExpo(x) {
+    return x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
+  }
+  function easeInExpo(x) {
+    return x === 0 ? 0 : Math.pow(2, 10 * x - 10);
+  }
+
+  // ------------------------------------------------------------------------
+  // DOM 节点与全局状态
+  // ------------------------------------------------------------------------
+  const splashCurtain = document.getElementById('splashCurtain');
+  const splashCanvas = document.getElementById('splashCanvas');
+  const mockHome = document.getElementById('mockHome');
+  const mockNav = document.getElementById('mockNav');
+  const homeCanvas = document.getElementById('homeCanvas');
+  const supernovaFlash = document.getElementById('supernovaFlash');
+  const timelineBar = document.getElementById('timelineBar');
+  const timelineFill = document.getElementById('timelineFill');
+
+  const hudVel = document.getElementById('hudVel');
+  const hudDist = document.getElementById('hudDist');
+  const hudPhaseCn = document.getElementById('hudPhaseCn');
+  const hudPhaseEn = document.getElementById('hudPhaseEn');
+
+  const btnReplay = document.getElementById('btnReplay');
+  const btnInfo = document.getElementById('btnInfo');
+  const speedSeg = document.getElementById('speedSeg');
+  const drawerBackdrop = document.getElementById('drawerBackdrop');
+  const btnCloseDrawer = document.getElementById('btnCloseDrawer');
+
+  const ctx = splashCanvas.getContext('2d');
+  const hCtx = homeCanvas.getContext('2d');
+
+  let W = window.innerWidth;
+  let H = window.innerHeight;
+  let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  const TOTAL_DURATION = 5.2; // 总时长 5.2 秒
+  let playbackSpeed = 1.0;
+  let simTime = 0.0;
+  let isFinished = false;
+  let isScrubbing = false;
+  let lastTimestamp = 0;
+
+  // ------------------------------------------------------------------------
+  // 三维相机与透视投影矩阵 (3D CAMERA & PERSPECTIVE)
+  // ------------------------------------------------------------------------
+  const cam = {
+    x: 0,
+    y: 18,
+    z: -620,
+    yaw: 0,
+    pitch: 0,
+    roll: 0,
+    shakeX: 0,
+    shakeY: 0
+  };
+
+  function lookAt(tx, ty, tz) {
+    const dx = tx - cam.x;
+    const dy = ty - cam.y;
+    const dz = tz - cam.z;
+    cam.yaw = Math.atan2(dx, dz);
+    cam.pitch = Math.atan2(dy, Math.hypot(dx, dz));
+  }
+
+  function project3D(x, y, z) {
+    // 加上相机震颤
+    let dx = x - (cam.x + cam.shakeX);
+    let dy = y - (cam.y + cam.shakeY);
+    let dz = z - cam.z;
+
+    // Yaw 旋转 (Y轴)
+    const cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw);
+    const x1 = dx * cy - dz * sy;
+    const z1 = dx * sy + dz * cy;
+
+    // Pitch 旋转 (X轴)
+    const cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+    const y1 = dy * cp - z1 * sp;
+    const z2 = dy * sp + z1 * cp;
+
+    if (z2 < 30) return null; // 近剪裁面
+
+    const focal = H * 1.12;
+    const scale = focal / z2;
+
+    return {
+      x: W / 2 + x1 * scale,
+      y: H / 2 - y1 * scale,
+      scale: scale,
+      zDepth: z2
+    };
+  }
+
+  // ------------------------------------------------------------------------
+  // 几何系统 1：居中倾斜三维星环 (3D INCLINED STARGATE RING)
+  // ------------------------------------------------------------------------
+  const RING_RADIUS = 210;
+  const RING_TILT = -56 * Math.PI / 180; // 绕 X 轴后仰 56°
+  const cosT = Math.cos(RING_TILT);
+  const sinT = Math.sin(RING_TILT);
+
+  function getRingPoint(theta, r = RING_RADIUS, zOffset = 50) {
+    // 基础圆方程在 X-Y 平面，应用后仰旋转
+    const rawX = Math.cos(theta) * r;
+    const rawY = Math.sin(theta) * r;
+    return [
+      rawX,
+      rawY * cosT,
+      zOffset + rawY * sinT
+    ];
+  }
+
+  // ------------------------------------------------------------------------
+  // 几何系统 2：三维全息体积点云列车构建 (POINT CLOUD TRAIN MODEL)
+  // ------------------------------------------------------------------------
+  const trainParticles = [];
+  const TRAIN_LENGTH = 165;
+  const TRAIN_RADIUS = 16.5;
+
+  (function buildTrainPointCloud() {
+    const NUM_RIBS = 36;
+    const POINTS_PER_RIB = 18;
+
+    for (let i = 0; i < NUM_RIBS; i++) {
+      const u = i / (NUM_RIBS - 1);
+      const lx = -TRAIN_LENGTH / 2 + TRAIN_LENGTH * u; // 车身局部 x (-L/2 到 +L/2，车头在 +x)
+
+      // 车头流线型与车尾微收缩半径曲线
+      let ry = TRAIN_RADIUS;
+      let rz = TRAIN_RADIUS * 0.92;
+
+      if (u > 0.70) {
+        const k = (u - 0.70) / 0.30;
+        // 子弹头锥形抛物线
+        const taper = Math.sqrt(Math.max(0, 1 - k * k)) * 0.92 + 0.08;
+        ry = TRAIN_RADIUS * taper;
+        rz = TRAIN_RADIUS * 0.92 * taper;
+      } else if (u < 0.12) {
+        const k = u / 0.12;
+        ry = TRAIN_RADIUS * (0.6 + 0.4 * Math.sin(k * Math.PI / 2));
+        rz = rz * (0.6 + 0.4 * Math.sin(k * Math.PI / 2));
+      }
+
+      for (let j = 0; j < POINTS_PER_RIB; j++) {
+        const phi = (j / POINTS_PER_RIB) * Math.PI * 2;
+        const ly = ry * Math.sin(phi);
+        const lz = rz * Math.cos(phi);
+
+        let color = '#4D7CFF';
+        let alpha = 0.55;
+        let pSize = rnd(0.9, 1.6);
+        let isGlow = false;
+
+        // 车脊高亮线 (Top Spine)
+        if (ly > TRAIN_RADIUS * 0.45 && Math.abs(lz) < TRAIN_RADIUS * 0.5) {
+          color = '#EAF2FF';
+          alpha = 0.85;
+          pSize = rnd(1.3, 2.0);
+          isGlow = true;
+        }
+        // 两侧客舱舷窗光带 (Side Windows)
+        if (Math.abs(ly) < 5.0 && Math.abs(lz) > TRAIN_RADIUS * 0.52) {
+          color = '#00F0FF';
+          alpha = 0.95;
+          pSize = rnd(1.4, 2.2);
+          isGlow = true;
+        }
+        // 车底裙板暗调 (Underbody Skirt)
+        if (ly < -TRAIN_RADIUS * 0.6) {
+          color = '#1D59F2';
+          alpha = 0.35;
+        }
+
+        trainParticles.push({
+          x: lx,
+          y: ly,
+          z: lz,
+          c: color,
+          a: alpha,
+          s: pSize,
+          isGlow: isGlow
+        });
+      }
+    }
+
+    // 驾驶舱内部高亮全息星核 (Cockpit Core)
+    for (let k = 0; k < 28; k++) {
+      const ku = rnd(0.78, 0.98);
+      trainParticles.push({
+        x: -TRAIN_LENGTH / 2 + TRAIN_LENGTH * ku,
+        y: rnd(-3, 8) * (1 - (ku - 0.78) / 0.2),
+        z: rnd(-6, 6) * (1 - (ku - 0.78) / 0.2),
+        c: k % 4 === 0 ? '#FFFFFF' : '#7DF9FF',
+        a: 0.95,
+        s: rnd(1.2, 2.2),
+        isGlow: true
+      });
+    }
+
+    // 双推进器尾喷环 (Dual Tail Thrusters)
+    for (let k = 0; k < 36; k++) {
+      const phi = (k / 18) * Math.PI * 2;
+      const r = (k < 18 ? 4.5 : 7.0);
+      trainParticles.push({
+        x: -TRAIN_LENGTH / 2 - rnd(1, 4),
+        y: Math.sin(phi) * r,
+        z: Math.cos(phi) * r,
+        c: '#00F0FF',
+        a: 0.9,
+        s: rnd(1.4, 2.5),
+        isGlow: true
+      });
+    }
+  })();
+
+  // ------------------------------------------------------------------------
+  // 几何系统 3：星环轨道尘埃与深空恒星
+  // ------------------------------------------------------------------------
+  const NUM_RING_DUST = 550;
+  const ringDust = [];
+  const DUST_COLORS = ['#8FB0FF', '#4D7CFF', '#00F0FF', '#CFE0FF', '#FFFFFF'];
+
+  for (let i = 0; i < NUM_RING_DUST; i++) {
+    ringDust.push({
+      theta: Math.random() * Math.PI * 2,
+      rOffset: rnd(-18, 18),
+      speed: rnd(0.06, 0.18) * (Math.random() < 0.85 ? -1 : 1),
+      color: DUST_COLORS[(Math.random() * DUST_COLORS.length) | 0],
+      alpha: rnd(0.18, 0.55),
+      size: rnd(0.8, 2.0),
+      twinkle: rnd(0, 10)
+    });
+  }
+
+  const NUM_BG_STARS = 160;
+  const bgStars = [];
+  for (let i = 0; i < NUM_BG_STARS; i++) {
+    bgStars.push({
+      x: Math.random(),
+      y: Math.random(),
+      r: rnd(0.4, 1.6),
+      twinkle: rnd(0, 10)
+    });
+  }
+
+  // ------------------------------------------------------------------------
+  // 粒子系统：离子尾焰、解体飞溅与 STA 逆流汇聚
+  // ------------------------------------------------------------------------
+  let trailParticles = [];
+  let burstSparks = [];
+  let staGatherParticles = [];
+  let staSampledPoints = [];
+  let hasSampledSTA = false;
+  let staFormed = false;
+
+  // 离屏 Canvas 高精度采样 "STA" 几何点阵
+  async function sampleSTAText() {
+    try {
+      await document.fonts.load('800 180px "Space Grotesk"');
+    } catch (e) {}
+
+    const offW = 900, offH = 260;
+    const offCanvas = document.createElement('canvas');
+    offCanvas.width = offW;
+    offCanvas.height = offH;
+    const octx = offCanvas.getContext('2d', { willReadFrequently: true });
+
+    octx.font = '800 190px "Space Grotesk", sans-serif';
+    octx.textAlign = 'center';
+    octx.textBaseline = 'middle';
+    octx.fillStyle = '#FFFFFF';
+    octx.fillText('STA', offW / 2, offH / 2);
+
+    const imgData = octx.getImageData(0, 0, offW, offH).data;
+    const pts = [];
+    const step = 4; // 采样步长
+
+    for (let y = 0; y < offH; y += step) {
+      for (let x = 0; x < offW; x += step) {
+        const idx = (y * offW + x) * 4;
+        if (imgData[idx + 3] > 120) {
+          pts.push([x - offW / 2, y - offH / 2]);
+        }
+      }
+    }
+
+    // 随机打乱点顺序
+    for (let i = pts.length - 1; i > 0; i--) {
+      const j = (Math.random() * (i + 1)) | 0;
+      [pts[i], pts[j]] = [pts[j], pts[i]];
+    }
+
+    staSampledPoints = pts;
+    hasSampledSTA = true;
+  }
+  sampleSTAText();
+
+  // ------------------------------------------------------------------------
+  // 姿态与动力学解算 (FRENET-SERRET FRAME & CENTRIFUGAL BANKING)
+  // ------------------------------------------------------------------------
+  function calcPoseAt(pointGetter, param, dt = 0.02, bankAngle = 0.32) {
+    const P = pointGetter(param);
+    const P_next = pointGetter(param + dt);
+
+    // 切线向量 T (Forward)
+    let Tx = P_next[0] - P[0];
+    let Ty = P_next[1] - P[1];
+    let Tz = P_next[2] - P[2];
+    const lenT = Math.hypot(Tx, Ty, Tz) || 1;
+    Tx /= lenT; Ty /= lenT; Tz /= lenT;
+
+    // 副法线 R0 = (0, 1, 0) x T
+    let Rx0 = Tz, Ry0 = 0, Rz0 = -Tx;
+    const lenR = Math.hypot(Rx0, Ry0, Rz0) || 1;
+    Rx0 /= lenR; Ry0 /= lenR; Rz0 /= lenR;
+
+    // 上向量 U0 = T x R0
+    let Ux0 = Ty * Rz0 - Tz * Ry0;
+    let Uy0 = Tz * Rx0 - Tx * Rz0;
+    let Uz0 = Tx * Ry0 - Ty * Rx0;
+
+    // 施加向心倾侧角 (Centrifugal Roll)
+    const cosB = Math.cos(bankAngle), sinB = Math.sin(bankAngle);
+    const Ux = Ux0 * cosB + Rx0 * sinB;
+    const Uy = Uy0 * cosB + Ry0 * sinB;
+    const Uz = Uz0 * cosB + Rz0 * sinB;
+
+    const Rx = Rx0 * cosB - Ux0 * sinB;
+    const Ry = Ry0 * cosB - Uy0 * sinB;
+    const Rz = Rz0 * cosB - Uz0 * sinB;
+
+    return {
+      pos: P,
+      T: [Tx, Ty, Tz],
+      U: [Ux, Uy, Uz],
+      R: [Rx, Ry, Rz]
+    };
+  }
+
+  function transformToWorld(pose, lx, ly, lz) {
+    return [
+      pose.pos[0] + pose.T[0] * lx + pose.U[0] * ly + pose.R[0] * lz,
+      pose.pos[1] + pose.T[1] * lx + pose.U[1] * ly + pose.R[1] * lz,
+      pose.pos[2] + pose.T[2] * lx + pose.U[2] * ly + pose.R[2] * lz
+    ];
+  }
+
+  // ------------------------------------------------------------------------
+  // 轨迹分段与时间线分镜规划 (TIMELINE CHOREOGRAPHY)
+  // ------------------------------------------------------------------------
+  const T_RING_BORN = 0.75;
+  const T_ORBIT_START = 0.40;
+  const T_ORBIT_END = 2.80;
+  const T_BREAKOUT_START = 2.80;
+  const T_BREAKOUT_END = 3.70;
+  const T_GATHER_START = 3.70;
+  const T_GATHER_LOCK = 4.55;
+  const T_SUPERNOVA = 4.60;
+  const T_TRANSITION_END = 5.20;
+
+  // 环形轨道起点和角度跨度 (逆时针绕行整整一周)
+  const THETA_START = 210 * Math.PI / 180;
+  const THETA_SWEEP = -340 * Math.PI / 180;
+
+  // 左下到右上冲刺的贝塞尔曲线控制点
+  const BREAKOUT_P0 = getRingPoint(THETA_START + THETA_SWEEP, RING_RADIUS, 50);
+  const BREAKOUT_P1 = [-480, -220, 110]; // 掠入左下近景
+  const BREAKOUT_P2 = [-80, 120, 40];    // 狂飙中段
+  const BREAKOUT_P3 = [1100, 720, -180]; // 冲向右上深空
+
+  function getBreakoutPoint(u) {
+    const inv = 1 - u;
+    const b0 = inv * inv * inv;
+    const b1 = 3 * inv * inv * u;
+    const b2 = 3 * inv * u * u;
+    const b3 = u * u * u;
+
+    return [
+      b0 * BREAKOUT_P0[0] + b1 * BREAKOUT_P1[0] + b2 * BREAKOUT_P2[0] + b3 * BREAKOUT_P3[0],
+      b0 * BREAKOUT_P0[1] + b1 * BREAKOUT_P1[1] + b2 * BREAKOUT_P2[1] + b3 * BREAKOUT_P3[1],
+      b0 * BREAKOUT_P0[2] + b1 * BREAKOUT_P1[2] + b2 * BREAKOUT_P2[2] + b3 * BREAKOUT_P3[2]
+    ];
+  }
+
+  // ------------------------------------------------------------------------
+  // 核心渲染主循环 (ANIMATION RENDER FRAME)
+  // ------------------------------------------------------------------------
+  function renderFrame(time, dt) {
+    ctx.clearRect(0, 0, W, H);
+
+    // 1. 相机动态呼吸与震颤
+    cam.z = -620 + (time / TOTAL_DURATION) * 45;
+    lookAt(0, 12, 50);
+
+    // 冲刺与爆闪阶段的相机震颤
+    if (time >= T_BREAKOUT_START && time < T_GATHER_START) {
+      const shakeAmp = Math.sin((time - T_BREAKOUT_START) / (T_BREAKOUT_END - T_BREAKOUT_START) * Math.PI) * 4.5;
+      cam.shakeX = (Math.random() - 0.5) * shakeAmp;
+      cam.shakeY = (Math.random() - 0.5) * shakeAmp;
+    } else if (time >= T_SUPERNOVA && time < T_SUPERNOVA + 0.35) {
+      const shakeAmp = (1 - (time - T_SUPERNOVA) / 0.35) * 6.0;
+      cam.shakeX = (Math.random() - 0.5) * shakeAmp;
+      cam.shakeY = (Math.random() - 0.5) * shakeAmp;
+    } else {
+      cam.shakeX = 0;
+      cam.shakeY = 0;
+    }
+
+    // 2. 绘制深空背景微光与闪烁星点
+    const bgGrad = ctx.createRadialGradient(W / 2, H * 0.45, 20, W / 2, H * 0.45, H * 0.75);
+    bgGrad.addColorStop(0, 'rgba(29, 89, 242, 0.24)');
+    bgGrad.addColorStop(0.5, 'rgba(11, 29, 82, 0.15)');
+    bgGrad.addColorStop(1, 'rgba(2, 6, 18, 0)');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    for (const st of bgStars) {
+      const alpha = 0.25 + 0.6 * Math.abs(Math.sin(time * 1.2 + st.twinkle));
+      ctx.fillStyle = `rgba(214, 228, 255, ${alpha.toFixed(2)})`;
+      ctx.beginPath();
+      ctx.arc(st.x * W, st.y * H, st.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 3. 计算时间状态与进度参数
+    const progress = clamp(time / TOTAL_DURATION, 0, 1);
+    timelineFill.style.width = (progress * 100).toFixed(1) + '%';
+
+    // HUD 数据更新
+    let currentVel = 0;
+    let currentDist = (progress * 42.8).toFixed(1);
+
+    if (time < T_ORBIT_END) {
+      const u = clamp((time - T_ORBIT_START) / (T_ORBIT_END - T_ORBIT_START), 0, 1);
+      currentVel = (0.2 + easeInOutCubic(u) * 0.65).toFixed(2);
+      hudPhaseCn.textContent = '星环绕行 · 巨构压迫';
+      hudPhaseEn.textContent = 'ORBITAL CIRCUMNITRATION';
+    } else if (time < T_GATHER_START) {
+      const u = clamp((time - T_BREAKOUT_START) / (T_BREAKOUT_END - T_BREAKOUT_START), 0, 1);
+      currentVel = (0.85 + easeInExpo(u) * 0.14).toFixed(2);
+      hudPhaseCn.textContent = '掠镜破局 · 冲向深空';
+      hudPhaseEn.textContent = 'HYPERSPACE BREAKOUT';
+    } else if (time < T_SUPERNOVA) {
+      currentVel = '0.99';
+      hudPhaseCn.textContent = '星尘逆流 · STA 凝聚';
+      hudPhaseEn.textContent = 'STARDUST CONVERGENCE';
+    } else {
+      currentVel = 'ARRIVED';
+      hudPhaseCn.textContent = '超新星爆闪 · 启程七中';
+      hudPhaseEn.textContent = 'WELCOME TO STA';
+    }
+
+    hudVel.textContent = currentVel === 'ARRIVED' ? 'ARRIVED' : currentVel + ' c';
+    hudDist.textContent = currentDist + ' ly';
+
+    // 4. 绘制星环粒子 (3D STARGATE RING)
+    ctx.globalCompositeOperation = 'lighter';
+    const ringFormK = easeOutExpo(clamp(time / T_RING_BORN, 0, 1));
+    const ringFadeOut = time >= T_SUPERNOVA ? Math.max(0, 1 - (time - T_SUPERNOVA) / 0.4) : 1;
+
+    for (const d of ringDust) {
+      d.theta += d.speed * dt;
+      const currentR = RING_RADIUS * (0.6 + 0.4 * ringFormK) + d.rOffset * ringFormK;
+      const pt3D = getRingPoint(d.theta, currentR, 50);
+      const pr = project3D(pt3D[0], pt3D[1], pt3D[2]);
+
+      if (pr) {
+        const tw = 0.6 + 0.4 * Math.sin(time * 2.0 + d.twinkle);
+        ctx.globalAlpha = d.alpha * tw * ringFormK * ringFadeOut;
+        ctx.fillStyle = d.color;
+        ctx.beginPath();
+        ctx.arc(pr.x, pr.y, Math.max(0.6, pr.scale * d.size * 1.25), 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // 5. 环心悬浮百分比 HUD (3D FLOATING HUD)
+    if (time > T_RING_BORN * 0.6 && time < T_BREAKOUT_END) {
+      const center3D = getRingPoint(0, 0, 50);
+      const cpr = project3D(center3D[0], center3D[1], center3D[2]);
+      const fadeHUD = Math.min(
+        clamp((time - T_RING_BORN * 0.6) / 0.4, 0, 1),
+        1 - clamp((time - (T_BREAKOUT_END - 0.3)) / 0.3, 0, 1)
+      );
+
+      if (cpr && fadeHUD > 0) {
+        ctx.save();
+        ctx.globalAlpha = fadeHUD;
+        const pctNum = Math.round(clamp(time / T_GATHER_LOCK, 0, 1) * 100);
+
+        ctx.font = `700 ${Math.max(48, H * 0.09)}px "Space Grotesk", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'rgba(0, 240, 255, 0.85)';
+        ctx.shadowBlur = 28;
+        ctx.fillStyle = '#EAF2FF';
+        ctx.fillText(String(pctNum).padStart(2, '0') + '%', cpr.x, cpr.y - 8);
+
+        ctx.shadowBlur = 0;
+        ctx.font = `600 ${Math.max(10, H * 0.015)}px "Space Grotesk", sans-serif`;
+        ctx.fillStyle = 'rgba(143, 176, 255, 0.85)';
+        ctx.fillText('GINGA ORBITAL SYSTEM', cpr.x, cpr.y + H * 0.065);
+        ctx.restore();
+      }
+    }
+
+    // 6. 列车解算与点云渲染 (TRAIN RENDERING)
+    let currentPose = null;
+    let isTrainVisible = false;
+    let trainAlpha = 1.0;
+
+    if (time >= T_ORBIT_START && time < T_BREAKOUT_START) {
+      // 阶段 1：贴环绕行
+      isTrainVisible = true;
+      const u = clamp((time - T_ORBIT_START) / (T_ORBIT_END - T_ORBIT_START), 0, 1);
+      const easedU = easeInOutCubic(u);
+      const theta = THETA_START + THETA_SWEEP * easedU;
+      currentPose = calcPoseAt((th) => getRingPoint(th, RING_RADIUS, 50), theta, 0.015, 0.36);
+    } else if (time >= T_BREAKOUT_START && time < T_BREAKOUT_END + 0.15) {
+      // 阶段 2：左下冲向右上
+      isTrainVisible = true;
+      const u = clamp((time - T_BREAKOUT_START) / (T_BREAKOUT_END - T_BREAKOUT_START), 0, 1);
+      const easedU = easeInExpo(u);
+      currentPose = calcPoseAt(getBreakoutPoint, easedU, 0.012, 0.55);
+      trainAlpha = 1.0 - clamp((time - T_BREAKOUT_END) / 0.15, 0, 1);
+    }
+
+    if (isTrainVisible && currentPose && trainAlpha > 0.01) {
+      // 渲染列车三维粒子
+      const numPts = trainParticles.length;
+      for (let i = 0; i < numPts; i++) {
+        const pt = trainParticles[i];
+        const worldPt = transformToWorld(currentPose, pt.x, pt.y, pt.z);
+        const pr = project3D(worldPt[0], worldPt[1], worldPt[2]);
+
+        if (pr) {
+          const depthFactor = clamp((pr.scale - 0.7) / 1.5, 0.4, 1.3);
+          const twinkle = pt.isGlow ? 0.8 + 0.2 * Math.sin(time * 6 + i) : 1;
+          ctx.globalAlpha = Math.min(1, pt.a * depthFactor * trainAlpha * twinkle);
+          ctx.fillStyle = pt.c;
+
+          const renderR = Math.max(0.65, pr.scale * pt.s * 1.15);
+          ctx.beginPath();
+          ctx.arc(pr.x, pr.y, renderR, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // 车头超新星大灯光晕 (SUPERNOVA HEADLIGHT FLARE)
+      const headLampPos = transformToWorld(currentPose, TRAIN_LENGTH / 2 + 6, 0, 0);
+      const headPr = project3D(headLampPos[0], headLampPos[1], headLampPos[2]);
+
+      if (headPr && trainAlpha > 0.1) {
+        ctx.save();
+        const flareR = headPr.scale * 65;
+        const flareGrad = ctx.createRadialGradient(headPr.x, headPr.y, 2, headPr.x, headPr.y, flareR);
+        flareGrad.addColorStop(0, `rgba(255, 255, 255, ${(0.9 * trainAlpha).toFixed(2)})`);
+        flareGrad.addColorStop(0.3, `rgba(0, 240, 255, ${(0.6 * trainAlpha).toFixed(2)})`);
+        flareGrad.addColorStop(1, 'rgba(0, 240, 255, 0)');
+        ctx.fillStyle = flareGrad;
+        ctx.beginPath();
+        ctx.arc(headPr.x, headPr.y, flareR, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 横向变形光芒 (Anamorphic Streak)
+        ctx.strokeStyle = `rgba(125, 249, 255, ${(0.7 * trainAlpha).toFixed(2)})`;
+        ctx.lineWidth = Math.max(1, headPr.scale * 2.2);
+        ctx.beginPath();
+        ctx.moveTo(headPr.x - flareR * 1.8, headPr.y);
+        ctx.lineTo(headPr.x + flareR * 1.8, headPr.y);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // 产生离子尾焰火花 (PLASMA EMISSION)
+      if (time < T_BREAKOUT_END) {
+        const tailPos = transformToWorld(currentPose, -TRAIN_LENGTH / 2 - 4, 0, 0);
+        const emitCount = time >= T_BREAKOUT_START ? 18 : 6;
+
+        for (let e = 0; e < emitCount; e++) {
+          trailParticles.push({
+            x: tailPos[0] + rnd(-6, 6),
+            y: tailPos[1] + rnd(-6, 6),
+            z: tailPos[2] + rnd(-6, 6),
+            vx: -currentPose.T[0] * rnd(140, 320) + rnd(-35, 35),
+            vy: -currentPose.T[1] * rnd(140, 320) + rnd(-35, 35),
+            vz: -currentPose.T[2] * rnd(140, 320) + rnd(-35, 35),
+            life: rnd(0.4, 0.95),
+            age: 0,
+            color: DUST_COLORS[(Math.random() * DUST_COLORS.length) | 0],
+            size: rnd(1.0, 2.4)
+          });
+        }
+      }
+
+      // 冲出屏幕时的瓦解爆发飞溅 (BREAKOUT DISINTEGRATION)
+      if (time >= T_BREAKOUT_END - 0.25 && burstSparks.length < 320) {
+        for (let k = 0; k < 15; k++) {
+          const samplePt = trainParticles[(Math.random() * trainParticles.length) | 0];
+          const wPt = transformToWorld(currentPose, samplePt.x, samplePt.y, samplePt.z);
+          burstSparks.push({
+            x: wPt[0],
+            y: wPt[1],
+            z: wPt[2],
+            vx: currentPose.T[0] * rnd(200, 600) + rnd(-120, 120),
+            vy: currentPose.T[1] * rnd(200, 600) + rnd(-120, 120),
+            vz: currentPose.T[2] * rnd(200, 600) + rnd(-120, 120),
+            life: rnd(0.6, 1.2),
+            age: 0,
+            color: samplePt.c,
+            size: rnd(1.2, 2.6)
+          });
+        }
+      }
+    }
+
+    // 7. 更新并绘制尾焰与瓦解火花 (TRAIL & SPARKS)
+    for (let i = trailParticles.length - 1; i >= 0; i--) {
+      const tp = trailParticles[i];
+      tp.age += dt;
+      if (tp.age >= tp.life) {
+        trailParticles.splice(i, 1);
+        continue;
+      }
+      tp.x += tp.vx * dt;
+      tp.y += tp.vy * dt;
+      tp.z += tp.vz * dt;
+      tp.vx *= 0.94;
+      tp.vy *= 0.94;
+      tp.vz *= 0.94;
+
+      const pr = project3D(tp.x, tp.y, tp.z);
+      if (pr) {
+        const fade = (1 - tp.age / tp.life) * 0.85;
+        ctx.globalAlpha = fade;
+        ctx.fillStyle = tp.color;
+        ctx.beginPath();
+        ctx.arc(pr.x, pr.y, Math.max(0.6, pr.scale * tp.size), 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    for (let i = burstSparks.length - 1; i >= 0; i--) {
+      const sp = burstSparks[i];
+      sp.age += dt;
+      if (sp.age >= sp.life) {
+        burstSparks.splice(i, 1);
+        continue;
+      }
+      sp.x += sp.vx * dt;
+      sp.y += sp.vy * dt;
+      sp.z += sp.vz * dt;
+
+      const pr = project3D(sp.x, sp.y, sp.z);
+      if (pr) {
+        const fade = (1 - sp.age / sp.life) * 0.9;
+        ctx.globalAlpha = fade;
+        ctx.strokeStyle = sp.color;
+        ctx.lineWidth = Math.max(0.8, pr.scale * 1.1);
+        ctx.beginPath();
+        ctx.moveTo(pr.x, pr.y);
+        ctx.lineTo(pr.x - sp.vx * 0.02 * pr.scale, pr.y - sp.vy * 0.02 * pr.scale);
+        ctx.stroke();
+      }
+    }
+
+    // 8. 阶段 4：星尘逆流与「STA」凝聚重构 (GRAVITATIONAL REVERSE CONVERGENCE)
+    if (time >= T_GATHER_START && hasSampledSTA && !staFormed) {
+      staFormed = true;
+      const targetPts = staSampledPoints;
+      const totalGatherPts = Math.min(targetPts.length, 1200);
+
+      // 收集屏幕右上与散落各处的粒子源
+      for (let i = 0; i < totalGatherPts; i++) {
+        // 从右上深空与周边旋转散落生成初位置 (模拟逆流源头)
+        const angle = rnd(-0.2, 0.9) * Math.PI;
+        const dist = rnd(W * 0.35, W * 0.75);
+        const startX = W * 0.68 + Math.cos(angle) * dist;
+        const startY = H * 0.28 + Math.sin(angle) * dist;
+
+        staGatherParticles.push({
+          x: startX,
+          y: startY,
+          vx: rnd(-200, -50),
+          vy: rnd(50, 200),
+          targetIdx: i,
+          color: DUST_COLORS[(i * 7) % DUST_COLORS.length],
+          size: rnd(1.1, 2.5),
+          seed: rnd(0, 10)
+        });
+      }
+    }
+
+    if (staFormed && staGatherParticles.length > 0) {
+      const gatherU = clamp((time - T_GATHER_START) / (T_GATHER_LOCK - T_GATHER_START), 0, 1);
+      const targetPts = staSampledPoints;
+      const centerX = W / 2;
+      const centerY = H * 0.44;
+      const fontScale = Math.min(W / 920, 1.25);
+
+      // 物理弹簧阻尼系数
+      const springK = lerp(45, 95, easeOutExpo(gatherU));
+      const damping = 0.78;
+
+      ctx.globalCompositeOperation = 'lighter';
+
+      for (let i = 0; i < staGatherParticles.length; i++) {
+        const p = staGatherParticles[i];
+        const target = targetPts[p.targetIdx % targetPts.length];
+        const tx = centerX + target[0] * fontScale;
+        const ty = centerY + target[1] * fontScale;
+
+        // 引力涡流 + 弹簧吸附
+        const dx = tx - p.x;
+        const dy = ty - p.y;
+
+        p.vx += dx * springK * dt;
+        p.vy += dy * springK * dt;
+        p.vx *= damping;
+        p.vy *= damping;
+
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+
+        // 呼吸微光
+        const tw = 0.7 + 0.3 * Math.sin(time * 5.0 + p.seed);
+        const alpha = clamp(0.35 + gatherU * 0.65, 0, 1) * tw;
+
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, Math.max(0.8, p.size * (0.8 + 0.4 * gatherU)), 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 「STA」锁定后的冲击波光环 (SHOCKWAVE RING)
+      if (time >= T_GATHER_LOCK - 0.15) {
+        const waveU = clamp((time - (T_GATHER_LOCK - 0.15)) / 0.5, 0, 1);
+        const waveR = waveU * Math.min(W, H) * 0.6;
+        const waveAlpha = Math.sin(waveU * Math.PI) * 0.75;
+
+        ctx.save();
+        ctx.strokeStyle = `rgba(0, 240, 255, ${waveAlpha.toFixed(2)})`;
+        ctx.lineWidth = (1 - waveU) * 4.0;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, waveR, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    // 9. 阶段 5：超新星爆闪与首页无缝揭幕 (SUPERNOVA CLIMAX & REVEAL)
+    if (time >= T_SUPERNOVA) {
+      const flashU = clamp((time - T_SUPERNOVA) / 0.55, 0, 1);
+      const flashAlpha = Math.sin(flashU * Math.PI) * 0.95;
+      supernovaFlash.style.opacity = flashAlpha.toFixed(2);
+
+      if (time >= T_SUPERNOVA + 0.15) {
+        splashCurtain.classList.add('cleared');
+        mockHome.classList.add('entered');
+        mockNav.classList.add('entered');
+      }
+    } else {
+      supernovaFlash.style.opacity = '0';
+      splashCurtain.classList.remove('cleared');
+      mockHome.classList.remove('entered');
+      mockNav.classList.remove('entered');
+    }
+
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  // ------------------------------------------------------------------------
+  // 首页粒子网格背景渲染 (HOMEPAGE CANVAS NETWORK)
+  // ------------------------------------------------------------------------
+  const homeNodes = [];
+  function initHomeNodes() {
+    homeNodes.length = 0;
+    const count = Math.min(Math.floor((W * H) / 14000), 85);
+    for (let i = 0; i < count; i++) {
+      homeNodes.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        vx: (Math.random() - 0.5) * 0.45,
+        vy: (Math.random() - 0.5) * 0.45,
+        r: rnd(0.9, 2.2)
+      });
+    }
+  }
+
+  function renderHomeCanvas() {
+    hCtx.clearRect(0, 0, W, H);
+    const linkDist = 135;
+
+    for (let i = 0; i < homeNodes.length; i++) {
+      const a = homeNodes[i];
+      a.x += a.vx;
+      a.y += a.vy;
+      if (a.x < -10) a.x = W + 10; else if (a.x > W + 10) a.x = -10;
+      if (a.y < -10) a.y = H + 10; else if (a.y > H + 10) a.y = -10;
+
+      for (let j = i + 1; j < homeNodes.length; j++) {
+        const b = homeNodes[j];
+        const dx = a.x - b.x, dy = a.y - b.y;
+        const d = Math.hypot(dx, dy);
+
+        if (d < linkDist) {
+          const alpha = (1 - d / linkDist) * 0.16;
+          hCtx.strokeStyle = `rgba(77, 124, 255, ${alpha.toFixed(3)})`;
+          hCtx.lineWidth = 1;
+          hCtx.beginPath();
+          hCtx.moveTo(a.x, a.y);
+          hCtx.lineTo(b.x, b.y);
+          hCtx.stroke();
+        }
+      }
+
+      hCtx.fillStyle = 'rgba(0, 240, 255, 0.45)';
+      hCtx.beginPath();
+      hCtx.arc(a.x, a.y, a.r, 0, Math.PI * 2);
+      hCtx.fill();
+    }
+  }
+
+  // ------------------------------------------------------------------------
+  // 尺寸调整与分辨率适配 (RESIZE & RETINA ADAPTATION)
+  // ------------------------------------------------------------------------
+  function handleResize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    splashCanvas.width = W * dpr;
+    splashCanvas.height = H * dpr;
+    splashCanvas.style.width = W + 'px';
+    splashCanvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    homeCanvas.width = W * dpr;
+    homeCanvas.height = H * dpr;
+    homeCanvas.style.width = W + 'px';
+    homeCanvas.style.height = H + 'px';
+    hCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    initHomeNodes();
+    sampleSTAText();
+  }
+  window.addEventListener('resize', handleResize);
+  handleResize();
+
+  // ------------------------------------------------------------------------
+  // 主循环控制器 (MAIN LOOP)
+  // ------------------------------------------------------------------------
+  function resetPlayback() {
+    simTime = 0.0;
+    isFinished = false;
+    staFormed = false;
+    staGatherParticles.length = 0;
+    trailParticles.length = 0;
+    burstSparks.length = 0;
+    splashCurtain.classList.remove('cleared');
+    mockHome.classList.remove('entered');
+    mockNav.classList.remove('entered');
+    supernovaFlash.style.opacity = '0';
+  }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const freezeT = urlParams.has('t') ? parseFloat(urlParams.get('t')) : null;
+  if (freezeT !== null) {
+    simTime = freezeT;
+    isScrubbing = true;
+  }
+  if (urlParams.has('speed')) {
+    playbackSpeed = parseFloat(urlParams.get('speed')) || 1.0;
+  }
+
+  function loop(timestamp) {
+    if (!lastTimestamp) lastTimestamp = timestamp;
+    let dt = (timestamp - lastTimestamp) / 1000;
+    lastTimestamp = timestamp;
+
+    dt = Math.min(dt, 0.06); // 防止丢帧抖动
+
+    if (!isScrubbing) {
+      simTime += dt * playbackSpeed;
+      if (simTime > TOTAL_DURATION) {
+        simTime = TOTAL_DURATION;
+        isFinished = true;
+      }
+    }
+
+    renderFrame(simTime, dt);
+    renderHomeCanvas();
+
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // ------------------------------------------------------------------------
+  // 交互控制事件绑定 (EVENT LISTENERS)
+  // ------------------------------------------------------------------------
+  btnReplay.addEventListener('click', resetPlayback);
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'KeyR' || e.code === 'Space') {
+      resetPlayback();
+    }
+  });
+
+  speedSeg.addEventListener('click', (e) => {
+    const btn = e.target.closest('.seg-btn');
+    if (!btn) return;
+    document.querySelectorAll('#speedSeg .seg-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    playbackSpeed = parseFloat(btn.dataset.speed) || 1.0;
+  });
+
+  // 进度条拖动与点击跳转 (Scrubber)
+  function seekToX(clientX) {
+    const rect = timelineBar.getBoundingClientRect();
+    const ratio = clamp((clientX - rect.left) / rect.width, 0, 1);
+    simTime = ratio * TOTAL_DURATION;
+    if (simTime < T_GATHER_START) {
+      staFormed = false;
+      staGatherParticles.length = 0;
+    }
+  }
+
+  timelineBar.addEventListener('mousedown', (e) => {
+    isScrubbing = true;
+    seekToX(e.clientX);
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (isScrubbing) seekToX(e.clientX);
+  });
+  window.addEventListener('mouseup', () => {
+    isScrubbing = false;
+  });
+
+  // 说明抽屉
+  btnInfo.addEventListener('click', () => drawerBackdrop.classList.add('open'));
+  btnCloseDrawer.addEventListener('click', () => drawerBackdrop.classList.remove('open'));
+  drawerBackdrop.addEventListener('click', (e) => {
+    if (e.target === drawerBackdrop) drawerBackdrop.classList.remove('open');
+  });
+
+})();
+</script>
+</body>
+</html>
