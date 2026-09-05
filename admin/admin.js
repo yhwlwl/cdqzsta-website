@@ -34,7 +34,7 @@
     copyLabel: '复制按钮文字', qrImg: '二维码图片', qrNote: '二维码备注', cardTitle: '卡片标题',
     tagline: '标语', scrollCue: '滚动提示词', scrollNote: '滚动提示语', ringText: '环形文字',
     line1: '第一行', line2: '第二行', ctaLabel: '按钮文字', bigText: '大字', slogans: '口号列表',
-    h: '栏目标题', t: '文字', kind: '类型'
+    h: '栏目标题', t: '文字', kind: '类型', splashText: '开屏粒子文字'
   };
   function kl(key) { return LABELS[key] || key; }
 

@@ -93,6 +93,7 @@ var DartSplashAnimation={
     options=options||{};
     const content=options.content||{},brand=content.brand||{};
     const brandShort=String(brand.shortEN||'STA');
+    const splashText=String(brand.splashText||brandShort);
     const brandNameCN=String(brand.nameCN||'成都七中科学技术协会');
     const brandEst=String(brand.est||'1999');
     const curtain=document.createElement('div');curtain.className='curtain';
@@ -221,7 +222,7 @@ var DartSplashAnimation={
     const COLS=['#8FB0FF','#4D7CFF','#DCE7FF','#FFFFFF','#BFD2FF'];
 
     let staPts=null;
-    const readyP=sampleTextPts(brandShort,Math.min(innerWidth*.36,245))
+    const readyP=sampleTextPts(splashText,Math.min(innerWidth*.36,245))
       .then(r=>{staPts=r;}).catch(()=>{});
 
     /* 辉光贴片：聚字粒子用发光体而不是素点 */

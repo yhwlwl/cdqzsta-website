@@ -10,6 +10,7 @@ window.SITE_CONTENT = {
     nameEN: "Science & Technology Association of Chengdu No.7 High School",
     abbr: "科协",
     shortEN: "STA",
+    splashText: "STA",
     type: "校级科技类高中生学生组织",
     magazine: "《未来梦》",
     founder: "周涛（电子科技大学教授）",
