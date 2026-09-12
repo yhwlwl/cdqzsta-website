@@ -109,10 +109,21 @@
     arrow: '<svg viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7m0 0H8m9 0v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
   };
 
+  function safeBr(v) {
+    return String(v == null ? '' : v)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/&lt;br\s*\/?&gt;/gi, '<br>')
+      .replace(/\r\n?|\n/g, '<br>');
+  }
+  function rich(node, value) {
+    if (node) node.innerHTML = safeBr(value);
+  }
   function h(tag, cls, text) {
     var el = document.createElement(tag);
     if (cls) el.className = cls;
-    if (text != null) el.textContent = text;
+    if (text != null) el.innerHTML = safeBr(text);
     return el;
   }
   function applyLogo(src) {
@@ -151,10 +162,10 @@
       probe.src = C.brand.logo;
     }
 
-    $('[data-brand-cn]').textContent = C.brand.nameCN;
-    $('[data-brand-en]').textContent = C.brand.nameEN.toUpperCase();
-    $('[data-foot-en]').textContent = C.brand.nameEN.toUpperCase();
-    $('.nav__cta .btn__label').textContent = C.nav.ctaLabel;
+    rich($('[data-brand-cn]'), C.brand.nameCN);
+    rich($('[data-brand-en]'), C.brand.nameEN.toUpperCase());
+    rich($('[data-foot-en]'), C.brand.nameEN.toUpperCase());
+    rich($('.nav__cta .btn__label'), C.nav.ctaLabel);
 
     var linksWrap = $('.nav__links');
     // Keep the notices entry second even when saved content uses an older order.
@@ -175,13 +186,14 @@
       menuWrap.appendChild(a);
     });
 
-    $('[data-hero-eyebrow]').textContent = C.hero.eyebrow;
+    rich($('[data-hero-eyebrow]'), C.hero.eyebrow);
     $('[data-hero-line1]').textContent = C.hero.line1;
     $('[data-hero-line2]').textContent = C.hero.line2;
-    $('[data-hero-sub]').textContent = C.hero.sub;
-    $('[data-hero-note]').textContent = C.hero.scrollNote;
-    $('[data-scroll-cue]').textContent = C.hero.scrollCue;
-    $('[data-ring-text]').textContent = C.hero.ringText;
+    rich($('[data-hero-sub]'), C.hero.sub);
+    rich($('[data-hero-note]'), C.hero.scrollNote);
+    rich($('[data-scroll-cue]'), C.hero.scrollCue);
+    var ringText = $('[data-ring-text]');
+    if (ringText) ringText.textContent = C.hero.ringText;
 
     var ctas = $('[data-hero-ctas]');
     C.hero.ctas.forEach(function (c) {
@@ -202,7 +214,7 @@
       wrap.setAttribute('data-speed', String(speeds[i % speeds.length]));
       var badge = h('span', 'badge');
       badge.appendChild(h('i'));
-      badge.appendChild(document.createTextNode(b));
+      badge.appendChild(h('span', null, b));
       wrap.appendChild(badge);
       badges.appendChild(wrap);
     });
@@ -220,10 +232,10 @@
       }
     });
 
-    $('[data-about-eyebrow]').textContent = C.about.eyebrow;
-    $('[data-about-title]').textContent = C.about.title;
-    $('[data-about-lead]').textContent = C.about.lead;
-    $('[data-ghost="ABOUT"]').textContent = C.about.ghost;
+    rich($('[data-about-eyebrow]'), C.about.eyebrow);
+    rich($('[data-about-title]'), C.about.title);
+    rich($('[data-about-lead]'), C.about.lead);
+    rich($('[data-ghost="ABOUT"]'), C.about.ghost);
     $('[data-about-html]').innerHTML = C.about.descHTML;
     if (C.about.art) {
       var fig = h('figure', 'about-art');
@@ -254,10 +266,10 @@
       statsWrap.appendChild(d);
     });
 
-    $('[data-history-eyebrow]').textContent = C.history.eyebrow;
-    $('[data-history-title]').textContent = C.history.title;
-    $('[data-history-desc]').textContent = C.history.desc;
-    $('[data-ghost="HISTORY"]').textContent = C.history.ghost;
+    rich($('[data-history-eyebrow]'), C.history.eyebrow);
+    rich($('[data-history-title]'), C.history.title);
+    rich($('[data-history-desc]'), C.history.desc);
+    rich($('[data-ghost="HISTORY"]'), C.history.ghost);
     var tlWrap = $('[data-history-items]');
     C.history.items.forEach(function (it) {
       var li = h('li', 'tl-item');
@@ -267,10 +279,10 @@
       tlWrap.appendChild(li);
     });
 
-    $('[data-org-eyebrow]').textContent = C.org.eyebrow;
-    $('[data-org-title]').textContent = C.org.title;
-    $('[data-org-desc]').textContent = C.org.desc;
-    $('[data-ghost="TEAM"]').textContent = C.org.ghost;
+    rich($('[data-org-eyebrow]'), C.org.eyebrow);
+    rich($('[data-org-title]'), C.org.title);
+    rich($('[data-org-desc]'), C.org.desc);
+    rich($('[data-ghost="TEAM"]'), C.org.ghost);
     var orgWrap = $('[data-org-groups]');
     C.org.groups.forEach(function (g) {
       var card = h('div', 'org-card');
@@ -294,10 +306,10 @@
       orgWrap.appendChild(card);
     });
 
-    $('[data-depts-eyebrow]').textContent = C.depts.eyebrow;
-    $('[data-depts-title]').textContent = C.depts.title;
-    $('[data-depts-desc]').textContent = C.depts.desc;
-    $('[data-ghost="TEAMS"]').textContent = C.depts.ghost;
+    rich($('[data-depts-eyebrow]'), C.depts.eyebrow);
+    rich($('[data-depts-title]'), C.depts.title);
+    rich($('[data-depts-desc]'), C.depts.desc);
+    rich($('[data-ghost="TEAMS"]'), C.depts.ghost);
     var list = $('[data-depts-list]');
     list.before(h('p', 'depts-hint', '轻触部门，展开宣言与方向；再次轻触可收起。'));
     C.depts.items.forEach(function (d, i) {
@@ -353,10 +365,10 @@
       list.appendChild(row);
     });
 
-    $('[data-events-eyebrow]').textContent = C.events.eyebrow;
-    $('[data-events-title]').textContent = C.events.title;
-    $('[data-events-desc]').textContent = C.events.desc;
-    $('[data-ghost="EVENTS"]').textContent = C.events.ghost;
+    rich($('[data-events-eyebrow]'), C.events.eyebrow);
+    rich($('[data-events-title]'), C.events.title);
+    rich($('[data-events-desc]'), C.events.desc);
+    rich($('[data-ghost="EVENTS"]'), C.events.ghost);
     var track = $('[data-events-track]');
     C.events.items.forEach(function (ev, i) {
       var card = h('article', 'event-card');
@@ -388,10 +400,10 @@
     more.appendChild(h('span', null, C.events.moreLabel));
     track.appendChild(more);
 
-    $('[data-voices-eyebrow]').textContent = C.voices.eyebrow;
-    $('[data-voices-title]').textContent = C.voices.title;
-    $('[data-voices-desc]').textContent = C.voices.desc;
-    $('[data-ghost="VOICES"]').textContent = C.voices.ghost;
+    rich($('[data-voices-eyebrow]'), C.voices.eyebrow);
+    rich($('[data-voices-title]'), C.voices.title);
+    rich($('[data-voices-desc]'), C.voices.desc);
+    rich($('[data-ghost="VOICES"]'), C.voices.ghost);
     var dotsWrap = $('[data-voice-dots]');
     voices.forEach(function (_, i) {
       var dot = h('button', 'voice-dot' + (i === 0 ? ' active' : ''));
@@ -400,10 +412,10 @@
       dotsWrap.appendChild(dot);
     });
 
-    $('[data-join-eyebrow]').textContent = C.join.eyebrow;
-    $('[data-join-tagline]').textContent = C.join.tagline;
-    $('[data-join-title]').textContent = C.join.title;
-    $('[data-join-desc]').textContent = C.join.desc;
+    rich($('[data-join-eyebrow]'), C.join.eyebrow);
+    rich($('[data-join-tagline]'), C.join.tagline);
+    rich($('[data-join-title]'), C.join.title);
+    rich($('[data-join-desc]'), C.join.desc);
     var jf = $('[data-join-facts]');
     C.join.facts.forEach(function (f) {
       var d = h('div', 'fact--light');
@@ -420,10 +432,10 @@
       li.appendChild(h('p', 'step-desc', s.desc));
       steps.appendChild(li);
     });
-    $('[data-join-card-title]').textContent = C.join.cardTitle;
-    $('[data-join-qqlabel]').textContent = C.join.qqLabel;
-    $('[data-join-qqnum]').textContent = C.join.qqNumber;
-    $('[data-join-qrnote]').textContent = C.join.qrNote;
+    rich($('[data-join-card-title]'), C.join.cardTitle);
+    rich($('[data-join-qqlabel]'), C.join.qqLabel);
+    rich($('[data-join-qqnum]'), C.join.qqNumber);
+    rich($('[data-join-qrnote]'), C.join.qrNote);
     if (C.join.qrImg) {
       var qrBox = $('.qr');
       qrBox.textContent = '';
@@ -433,11 +445,11 @@
       qi.loading = 'lazy';
       qrBox.appendChild(qi);
     }
-    $('[data-join-copylabel]').textContent = C.join.copyLabel;
-    $('[data-join-note]').textContent = C.join.note;
+    rich($('[data-join-copylabel]'), C.join.copyLabel);
+    rich($('[data-join-note]'), C.join.note);
     $('.copy-qq').setAttribute('data-copy', C.join.copyText);
 
-    $('[data-footer-big]').textContent = C.footer.bigText;
+    rich($('[data-footer-big]'), C.footer.bigText);
     var sl = $('[data-footer-slogans]');
     C.footer.slogans.forEach(function (s) { sl.appendChild(h('span', null, s)); });
     var cols = $('[data-footer-cols]');
@@ -455,33 +467,41 @@
       c.appendChild(ul);
       cols.appendChild(c);
     });
-    $('[data-footer-legal]').textContent = C.footer.legal;
-    $('[data-footer-copy]').textContent = C.footer.copyright;
-    $('[data-footer-version]').textContent = C.footer.version;
-    $('[data-footer-credit]').textContent = C.footer.credit || '';
+    rich($('[data-footer-legal]'), C.footer.legal);
+    rich($('[data-footer-copy]'), C.footer.copyright);
+    rich($('[data-footer-version]'), C.footer.version);
+    rich($('[data-footer-credit]'), C.footer.credit || '');
   }
 
   function splitEl(el) {
     var text = el.textContent;
     el.setAttribute('aria-label', text.trim());
-    el.textContent = '';
     var frag = document.createDocumentFragment();
-    var tokens = text.match(/[A-Za-z0-9&·！！？]+|\s|[\s\S]/g) || [];
-    tokens.forEach(function (t) {
-      if (/^\s+$/.test(t)) {
-        frag.appendChild(document.createTextNode('\u00A0'));
+    function pushLine(line) {
+      var tokens = line.match(/[A-Za-z0-9&·！！？]+|\s|[\s\S]/g) || [];
+      tokens.forEach(function (t) {
+        if (/^\s+$/.test(t)) {
+          frag.appendChild(document.createTextNode('\u00A0'));
+          return;
+        }
+        var w = document.createElement('span');
+        w.className = 'w';
+        w.setAttribute('aria-hidden', 'true');
+        var wi = document.createElement('span');
+        wi.className = 'wi';
+        wi.textContent = t;
+        w.appendChild(wi);
+        frag.appendChild(w);
+      });
+    }
+    Array.prototype.forEach.call(el.childNodes, function (node) {
+      if (node.nodeType === 1 && node.tagName === 'BR') {
+        frag.appendChild(document.createElement('br'));
         return;
       }
-      var w = document.createElement('span');
-      w.className = 'w';
-      w.setAttribute('aria-hidden', 'true');
-      var wi = document.createElement('span');
-      wi.className = 'wi';
-      wi.textContent = t;
-      w.appendChild(wi);
-      frag.appendChild(w);
+      pushLine(node.textContent || '');
     });
-    el.appendChild(frag);
+    el.replaceChildren(frag);
   }
 
   function splitAll() {
@@ -888,7 +908,7 @@
     var hoverMedia = window.matchMedia('(min-width: 1024px) and (hover: hover) and (pointer: fine)');
     function syncInputHint() {
       var desc = $('[data-depts-desc]');
-      if (desc) desc.textContent = hoverMedia.matches ? C.depts.desc : String(C.depts.desc || '').replace(/悬停每一行/g, '轻触每一行');
+      rich(desc, hoverMedia.matches ? C.depts.desc : String(C.depts.desc || '').replace(/悬停每一行/g, '轻触每一行'));
     }
     syncInputHint();
     var raf = 0;
