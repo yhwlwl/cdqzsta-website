@@ -64,25 +64,11 @@
     </div>
 
     <a class="hero-ring" href="#about" aria-label="向下滚动">
-      <svg class="hero-emblem" viewBox="0 0 380 260" aria-hidden="true">
-        <defs>
-          <linearGradient id="staFace" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#1a2b54"/><stop offset=".52" stop-color="#0a1737"/><stop offset="1" stop-color="#050d24"/></linearGradient>
-          <linearGradient id="staEdge" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#264c9f"/><stop offset="1" stop-color="#07163c"/></linearGradient>
-          <radialGradient id="staSatellite" cx="28%" cy="24%" r="78%"><stop stop-color="#dce7ff"/><stop offset=".22" stop-color="#7fa0ff"/><stop offset=".58" stop-color="#1d59f2"/><stop offset="1" stop-color="#071d69"/></radialGradient>
-          <path id="staOrbit" d="M 345,99 C 337,67 12,141 28,173 C 44,205 353,131 345,99 Z"/>
-        </defs>
-        <path class="hero-emblem__back" d="M 28,173 C 12,141 337,67 345,99"/>
-        <g class="hero-emblem__ball hero-emblem__ball--back"><circle class="hero-emblem__ball-shadow" cx="1.5" cy="2" r="10"/><circle r="9" fill="url(#staSatellite)"/><circle class="hero-emblem__ball-glint" cx="-3" cy="-3" r="2.1"/><animateMotion dur="8s" repeatCount="indefinite" calcMode="spline" keyPoints="0;0.5;1" keyTimes="0;0.5;1" keySplines="0.65 0 0.35 1;0.65 0 0.35 1"><mpath href="#staOrbit"/></animateMotion></g>
-        <g class="hero-emblem__type">
-          <text class="hero-emblem__letters hero-emblem__depth hero-emblem__depth--far" x="65" y="197" textLength="270" lengthAdjust="spacingAndGlyphs">STA</text>
-          <text class="hero-emblem__letters hero-emblem__depth hero-emblem__depth--mid" x="62" y="194" textLength="270" lengthAdjust="spacingAndGlyphs">STA</text>
-          <text class="hero-emblem__letters hero-emblem__depth hero-emblem__depth--near" x="59" y="191" textLength="270" lengthAdjust="spacingAndGlyphs">STA</text>
-          <text class="hero-emblem__letters hero-emblem__face" x="56" y="188" textLength="270" lengthAdjust="spacingAndGlyphs">STA</text>
-        </g>
-        <path class="hero-emblem__cut" d="M 28,173 C 44,205 353,131 345,99"/>
-        <path class="hero-emblem__front" d="M 28,173 C 44,205 353,131 345,99"/>
-        <g class="hero-emblem__ball hero-emblem__ball--front"><circle class="hero-emblem__ball-shadow" cx="1.5" cy="2" r="10"/><circle r="9" fill="url(#staSatellite)"/><circle class="hero-emblem__ball-glint" cx="-3" cy="-3" r="2.1"/><animateMotion dur="8s" repeatCount="indefinite" calcMode="spline" keyPoints="0;0.5;1" keyTimes="0;0.5;1" keySplines="0.65 0 0.35 1;0.65 0 0.35 1"><mpath href="#staOrbit"/></animateMotion></g>
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        <defs><path id="ringPath" d="M100,100 m-80,0 a80,80 0 1,1 160,0 a80,80 0 1,1 -160,0"/></defs>
+        <text><textPath href="#ringPath" data-ring-text></textPath></text>
       </svg>
+      <span class="hero-ring__center"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16m0 0l-6-6m6 6l6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
     </a>
 
     <div class="hero-foot container">
