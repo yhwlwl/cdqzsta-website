@@ -285,7 +285,7 @@ window.SITE_CONTENT = {
     ],
     copyright: "© 2026 成都七中科学技术协会 STA · Science & Technology Association of Chengdu No.7 High School",
     legal: "本站内容均由成都七中科学技术协会原创或经授权发布，禁止任何形式的转载、摘编等侵权行为。若发现有任何侵权行为，请及时与我们联系，我们将依法追究其法律责任。",
-    version: "正式版 v1.3.0 · 最后更新 2026-09-12",
+    version: "正式版 v1.4.0 · 最后更新 2026-09-12",
     credit: "本网站由 25 级网络部 搭建运营"
   }
 
