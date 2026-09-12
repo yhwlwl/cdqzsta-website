@@ -582,11 +582,36 @@
 
   $('#save-btn').addEventListener('click', function () { publishChanges(this); });
 
+  /* 版本号规则：后台每次有实际修改并发布 → 最小位 +1 并刷新日期；新 commit → 第二位由代码侧手动更新 */
+  function contentChanged() {
+    if (!LOADED || !LOADED.data) return true;
+    try {
+      var a = JSON.parse(JSON.stringify(DATA));
+      var b = JSON.parse(JSON.stringify(LOADED.data));
+      if (a.footer) delete a.footer.version;
+      if (b.footer) delete b.footer.version;
+      return JSON.stringify(a) !== JSON.stringify(b);
+    } catch (e) { return true; }
+  }
+  function bumpContentVersion() {
+    var f = DATA && DATA.footer;
+    if (!f) return;
+    var s = String(f.version || '');
+    var m = s.match(/v(\d+)\.(\d+)\.(\d+)/);
+    if (!m) return;
+    var d = new Date();
+    var date = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    f.version = s
+      .replace(/v\d+\.\d+\.\d+/, 'v' + m[1] + '.' + m[2] + '.' + (parseInt(m[3], 10) + 1))
+      .replace(/最后更新\s*\d{4}-\d{2}-\d{2}/, '最后更新 ' + date);
+  }
+
   async function publishChanges(btn) {
     btn.disabled = true;
     if (!btn.dataset.label) btn.dataset.label = btn.textContent;
     btn.textContent = '保存中…';
     try {
+      if (contentChanged()) bumpContentVersion();
       await api('/rest/v1/sta_web_site_content?id=eq.main', { method: 'PATCH', body: { data: DATA } });
       await loadContent();
       toast('已保存并发布，前台刷新即可生效');
