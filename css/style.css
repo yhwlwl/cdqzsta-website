@@ -244,26 +244,17 @@ html.menu-open .logo__text small{color:rgba(255,255,255,.45)}
 .b3{top:72%;right:6%}.b3 .badge{animation-duration:5s;animation-delay:-.6s}
 .b4{top:13%;right:7%}.b4 .badge{animation-duration:6.2s;animation-delay:-3.4s}
 
-.hero-ring{position:absolute;z-index:1;right:2%;top:43%;width:clamp(220px,23vw,340px);height:auto;aspect-ratio:19/13;display:block}
-.hero-ring .hero-emblem{width:100%;height:100%;overflow:visible;transition:transform .7s var(--ease-out)}
-.hero-emblem__letters{font-family:'Times New Roman',Georgia,serif;font-size:156px;font-weight:400;letter-spacing:-12px}
-.hero-emblem__depth--far{fill:#06102a}
-.hero-emblem__depth--mid{fill:#0a1f4d}
-.hero-emblem__depth--near{fill:url(#staEdge)}
-.hero-emblem__face{fill:url(#staFace);stroke:rgba(255,255,255,.34);stroke-width:1.2;paint-order:stroke fill}
-.hero-emblem__back,.hero-emblem__front,.hero-emblem__cut{fill:none;stroke-linecap:round}
-.hero-emblem__back{stroke:var(--blue);stroke-width:4;opacity:.42}
-.hero-emblem__front{stroke:var(--blue);stroke-width:6}
-.hero-emblem__cut{stroke:var(--bg);stroke-width:13}
-.hero-emblem__ball-shadow{fill:rgba(7,18,51,.2)}
-.hero-emblem__ball-glint{fill:rgba(255,255,255,.82)}
-.hero-emblem__ball--front{animation:satellite-front 8s linear infinite}
-.hero-emblem__ball--back{animation:satellite-back 8s linear infinite}
-@keyframes satellite-front{0%,49.99%{opacity:0}50%,100%{opacity:1}}
-@keyframes satellite-back{0%,49.99%{opacity:1}50%,100%{opacity:0}}
-@media(hover:hover){.hero-ring:hover .hero-emblem{transform:translateY(-4px)}}
-@media(prefers-reduced-motion:reduce){.hero-emblem__ball{display:none}}
+.hero-ring{position:absolute;z-index:1;right:5%;top:47%;width:200px;height:200px;display:block}
+.hero-ring svg{width:100%;height:100%;animation:spin 18s linear infinite}
+.hero-ring text{font-family:var(--font-d);font-size:12.5px;font-weight:600;letter-spacing:.32em;fill:var(--blue);opacity:.85}
+.hero-ring__center{
+  position:absolute;inset:0;margin:auto;width:58px;height:58px;border-radius:50%;
+  background:#fff;border:1px solid var(--line);display:grid;place-items:center;
+  box-shadow:0 12px 32px rgba(10,20,46,.1);
+}
+.hero-ring__center svg{width:18px;height:18px;color:var(--blue);animation:bounceY 2s ease-in-out infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+@keyframes bounceY{0%,100%{transform:translateY(-3px)}50%{transform:translateY(3px)}}
 
 .hero-foot{position:absolute;left:0;right:0;bottom:34px;z-index:2;display:flex;justify-content:space-between;align-items:flex-end}
 .scroll-cue{display:flex;align-items:center;gap:14px;font-family:var(--font-d);font-size:11px;font-weight:600;letter-spacing:.3em;color:var(--ink-40)}
@@ -577,7 +568,9 @@ html.menu-open .logo__text small{color:rgba(255,255,255,.45)}
   .join{margin:0 8px}
 
   /* 移动端装饰：缩小并放进标题右侧空白区，完整可见 */
-  .hero-ring{display:block;right:10px;top:36%;width:125px;height:auto}
+  .hero-ring{display:block;right:10px;top:36%;width:112px;height:112px}
+  .hero-ring__center{width:42px;height:42px}
+  .hero-ring__center svg{width:15px;height:15px}
   .hero-badges{display:none}
 
   /* 移动端全屏菜单：压缩字号与留白，保证 8 项在一屏内 */
@@ -615,7 +608,7 @@ html.menu-open .logo__text small{color:rgba(255,255,255,.45)}
 
 /* 窄屏：装饰再收一档，防止与标题贴边 */
 @media (max-width:350px){
-  .hero-ring{width:100px;height:auto;right:6px;top:38%}
+  .hero-ring{width:96px;height:96px;right:6px;top:38%}
   .b1{right:6px}
 }
 
