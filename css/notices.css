@@ -67,7 +67,8 @@
 .b-reader::backdrop,.b-lightbox::backdrop{background:#07123385;backdrop-filter:blur(12px)}
 .b-reader-shell{background:var(--bg);border-radius:28px;max-height:88dvh;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;box-shadow:0 35px 100px #07123350;position:relative}
 .b-reader-top{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:14px 22px;background:#f5f8fff0;border-bottom:1px solid var(--line);backdrop-filter:blur(12px);font-size:12px;color:var(--blue-deep)}
-.b-close{width:44px;height:44px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;border-radius:50%;font-size:26px;font-weight:300;line-height:1;transition:transform .3s,background .3s}
+.b-close{width:44px;height:44px;padding:0;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;border-radius:50%;color:var(--navy);transform-origin:50% 50%;transition:transform .3s,background .3s}
+.b-close svg{width:15px;height:15px}
 .b-close:hover{transform:rotate(90deg);background:var(--sky)}
 .b-reader-body{padding:34px 52px 48px}
 .b-reader h2{font-size:clamp(28px,4vw,46px);line-height:1.4;letter-spacing:-.03em;margin-bottom:18px}

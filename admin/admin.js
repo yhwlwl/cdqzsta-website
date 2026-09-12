@@ -1008,18 +1008,47 @@
     updateVisBar();
   }
 
+  /* 可视化编辑的文本统一用 <br> 记录换行，前台按换行渲染 */
+  function safeBr(v) {
+    return String(v == null ? '' : v)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/&lt;br\s*\/?&gt;/gi, '<br>')
+      .replace(/\r\n?|\n/g, '<br>');
+  }
+  function readInline(el) {
+    var out = '';
+    (function walk(node) {
+      Array.prototype.forEach.call(node.childNodes, function (n) {
+        if (n.nodeType === 3) { out += n.nodeValue; return; }
+        if (n.nodeType !== 1) return;
+        if (n.tagName === 'BR') { out += '\n'; return; }
+        var block = /^(DIV|P|LI|SECTION|ARTICLE|UL|OL|H[1-6]|BLOCKQUOTE)$/.test(n.tagName);
+        if (block && out && out.charAt(out.length - 1) !== '\n') out += '\n';
+        var emptyLine = block && n.childNodes.length === 1 &&
+          n.firstChild.nodeType === 1 && n.firstChild.tagName === 'BR';
+        if (!emptyLine) walk(n);
+        if (block && out.charAt(out.length - 1) !== '\n') out += '\n';
+      });
+    })(el);
+    return out.replace(/^\n+|\n+$/g, '').split('\n').join('<br>');
+  }
+
   function reg(el, path, kind, split) {
     if (!el || el.nodeType !== 1) return;
     el.contentEditable = 'true';
     el.spellcheck = false;
     el.classList.add('v-ed');
-    el.__vp = { path: path, kind: kind || 'text', split: !!split };
+    el.__vp = { path: path, kind: kind || 'br', split: !!split };
   }
 
   function regTextNode(hostEl, path) {
     if (!hostEl) return;
     var n = hostEl.lastChild;
-    if (!n || n.nodeType !== 3) return;
+    if (!n) return;
+    if (n.nodeType === 1) { reg(n, path); return; }
+    if (n.nodeType !== 3) return;
     var s = hostEl.ownerDocument.createElement('span');
     s.textContent = n.nodeValue;
     hostEl.replaceChild(s, n);
@@ -1035,6 +1064,8 @@
     else if (kind === 'num') {
       v = parseFloat(el.textContent.replace(/[^\d.\-]/g, ''));
       if (isNaN(v)) return;
+    } else if (kind === 'br') {
+      v = readInline(el);
     } else {
       v = el.textContent.replace(/[\n\r\t]+/g, ' ');
     }
@@ -1047,7 +1078,16 @@
   function syncTwins(srcEl, path, v) {
     qa('.v-ed').forEach(function (el) {
       if (el === srcEl || !el.__vp) return;
-      if (el.__vp.path.join('.') === path.join('.') && el.textContent !== v) el.textContent = v;
+      if (el.__vp.path.join('.') !== path.join('.')) return;
+      if (el.__vp.kind === 'html') {
+        if (el.innerHTML.trim() !== String(v).trim()) el.innerHTML = v;
+      } else if (el.__vp.kind === 'num') {
+        return;
+      } else if (el.__vp.kind === 'br') {
+        if (readInline(el) !== v) el.innerHTML = safeBr(v);
+      } else if (el.textContent !== v) {
+        el.textContent = v;
+      }
     });
   }
 

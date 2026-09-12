@@ -29,10 +29,21 @@
     });
   }
 
+  function safeBr(v) {
+    return String(v == null ? '' : v)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/&lt;br\s*\/?&gt;/gi, '<br>')
+      .replace(/\r\n?|\n/g, '<br>');
+  }
+  function rich(node, value) {
+    if (node) node.innerHTML = safeBr(value);
+  }
   function el(tag, cls, text) {
     var node = document.createElement(tag);
     if (cls) node.className = cls;
-    if (text != null) node.textContent = text;
+    if (text != null) node.innerHTML = safeBr(text);
     return node;
   }
   function button(text, cls, action) {
@@ -50,6 +61,11 @@
   function makeArrowSvg() {
     var span = el('span');
     span.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M4 12h16m0 0l-6-6m6 6l-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    return span.firstChild;
+  }
+  function closeIcon() {
+    var span = el('span');
+    span.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
     return span.firstChild;
   }
   function photo(src, alt, cls) {
@@ -418,8 +434,9 @@
     reader = el('dialog', 'b-reader'); reader.setAttribute('aria-labelledby', 'b-reader-title');
     var shell = el('div', 'b-reader-shell'); shell.setAttribute('data-lenis-prevent', '');
     var top = el('div', 'b-reader-top'); top.append(el('span', '', 'STA / 通知公告'));
-    var close = button('×', 'b-close', function () { closeDialog(reader); });
+    var close = button('', 'b-close', function () { closeDialog(reader); });
     close.setAttribute('aria-label', '关闭公告');
+    close.append(closeIcon());
     top.append(close);
     shell.append(top, el('div', 'b-reader-body'));
     reader.append(shell);
@@ -430,7 +447,7 @@
     var bar = el('div', 'b-lightbox-bar'); bar.append(el('span', 'b-image-title', '图片查看'));
     var tools = el('div', 'b-lightbox-tools');
     var zoom = button('放大', 'b-zoom', toggleZoom); zoom.setAttribute('aria-pressed', 'false');
-    var x = button('×', 'b-close', function () { closeDialog(lightbox); }); x.setAttribute('aria-label', '关闭图片查看');
+    var x = button('', 'b-close', function () { closeDialog(lightbox); }); x.setAttribute('aria-label', '关闭图片查看'); x.append(closeIcon());
     tools.append(zoom, x); bar.append(tools);
     var stage = el('div', 'b-lightbox-stage'); stage.setAttribute('tabindex', '0');
     stage.setAttribute('aria-label', '图片，可放大后滚动查看');
@@ -771,13 +788,13 @@
     mountBrandLogo();
     initCursor();
     var cn = $('[data-brand-cn]');
-    if (cn && C.brand) cn.textContent = C.brand.nameCN;
+    if (cn && C.brand) rich(cn, C.brand.nameCN);
     var en = $('[data-brand-en]');
-    if (en && C.brand) en.textContent = (C.brand.nameEN || '').toUpperCase();
+    if (en && C.brand) rich(en, (C.brand.nameEN || '').toUpperCase());
     var fe = $('[data-foot-en]');
-    if (fe && C.brand) fe.textContent = (C.brand.nameEN || '').toUpperCase();
+    if (fe && C.brand) rich(fe, (C.brand.nameEN || '').toUpperCase());
     var cta = $('.nav__cta .btn__label');
-    if (cta && C.nav) cta.textContent = C.nav.ctaLabel;
+    if (cta && C.nav) rich(cta, C.nav.ctaLabel);
     var linksWrap = $('.nav__links');
     if (linksWrap && C.nav) {
       C.nav.links.forEach(function (l) {
@@ -811,10 +828,10 @@
         });
         c.append(ul); cols.append(c);
       });
-      var legal = $('[data-footer-legal]'); if (legal) legal.textContent = C.footer.legal;
-      var copy = $('[data-footer-copy]'); if (copy) copy.textContent = C.footer.copyright;
-      var ver = $('[data-footer-version]'); if (ver) ver.textContent = C.footer.version;
-      var cr = $('[data-footer-credit]'); if (cr) cr.textContent = C.footer.credit || '';
+      var legal = $('[data-footer-legal]'); if (legal) rich(legal, C.footer.legal);
+      var copy = $('[data-footer-copy]'); if (copy) rich(copy, C.footer.copyright);
+      var ver = $('[data-footer-version]'); if (ver) rich(ver, C.footer.version);
+      var cr = $('[data-footer-credit]'); if (cr) rich(cr, C.footer.credit || '');
     }
     var menu = $('.nav__burger'), overlay = $('.menu-overlay');
     if (menu && overlay) {
