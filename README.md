@@ -5,7 +5,7 @@
 
 [在线访问 · www.stacdqz.tech](https://www.stacdqz.tech)
 
-![STA Website Home](docs/images/sta-home.png)
+![STA Website Home](docs/images/IMG_4291.jpeg)
 
 ## 项目简介
 
@@ -30,15 +30,15 @@
 
 ### 首页
 
-![STA Website Home](docs/images/sta-home.png)
+![STA Website Home](docs/images/IMG_4291.jpeg)
 
 ### STA Particle
 
-![STA Particle Title](docs/images/sta-particle-title.png)
+![STA Particle Title](docs/images/IMG_4290.jpeg)
 
 ### Stellar Orbital
 
-![STA Particle Orbit](docs/images/sta-particle-orbit.png)
+![STA Particle Orbit](docs/images/IMG_4294.jpeg)
 
 ## 技术栈
 
